@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Enter the Book — Charlie and the Chocolate Factory</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1208;font-family:Georgia,serif;color:#fff3dc}canvas{display:block}
+button{font:700 14px Georgia,serif;cursor:pointer;border:0;border-radius:18px;padding:8px 16px;background:#ffcf6b;color:#3a1a0a}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(40,16,6,.88);text-align:center;padding:20px}
+#start h1{font-size:clamp(30px,6vw,60px);margin:0;color:#ffcf6b;text-shadow:0 4px 0 #6b2f12}#start p{margin:0;max-width:520px;line-height:1.5}
+#go{font-size:20px;padding:14px 34px;background:#ff8a2a;color:#fff}
+/* VR button forced above the start overlay (z-index 100) so it is never covered */
+#vrwrap button{position:fixed!important;left:50%!important;bottom:26px!important;transform:translateX(-50%)!important;width:auto!important;z-index:10000!important;background:#ff2d87!important;color:#fff!important;border:3px solid #fff!important;border-radius:44px!important;padding:16px 36px!important;font:700 22px Georgia,serif!important;opacity:1!important;box-shadow:0 6px 24px rgba(255,45,135,.6)}
+#vrwrap button::before{content:"🥽 "}
+#top{position:fixed;top:12px;left:12px;z-index:50;background:rgba(40,16,6,.75);border:1px solid #ffcf6b;border-radius:10px;padding:8px 14px;font-size:14px;line-height:1.5}
+#btns{position:fixed;top:12px;right:12px;z-index:50;display:flex;gap:8px}
+#hud{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:50;max-width:min(560px,90vw);text-align:center;background:rgba(40,16,6,.85);border:1px solid #ffcf6b;border-radius:12px;padding:10px 16px;opacity:0;transition:opacity .3s;pointer-events:none}
+#map{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(30,12,4,.93);flex-direction:column;gap:4px}
+.n{width:300px;text-align:center;padding:7px;border-radius:14px;border:2px solid #7a4a2a;color:#b89a80;font-size:15px}
+.n.done{border-color:#7dffb2;color:#7dffb2}.n.cur{background:#ff2d87;border-color:#fff;color:#fff;font-weight:700}.n.next{border-color:#ffcf6b;color:#ffcf6b;border-style:dashed}
+.c{font-size:12px;color:#ffcf6b}.c.boat{color:#7be0ff}.c.lift{color:#ffe45e}
+#end{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;font-size:64px;color:#ffcf6b;background:rgba(40,16,6,.6)}
+#coins{position:fixed;top:56px;right:12px;z-index:50;background:rgba(40,16,6,.8);border:2px solid #ffd24a;color:#ffd24a;border-radius:14px;padding:6px 14px;font:700 18px Georgia,serif}
+#plus{position:fixed;top:100px;right:34px;z-index:55;color:#ffd24a;font:700 28px Georgia,serif;opacity:0;pointer-events:none}
+#plus.go{animation:pl .9s ease-out}@keyframes pl{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+#menu,#pause{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(30,12,4,.92);text-align:center;padding:16px}
+#menu h2,#pause h2{color:#ffcf6b;margin:0}.rw{width:min(430px,90vw);font-size:16px;background:#ff8a2a;color:#fff}.rw:disabled{opacity:.45}
+#end{flex-direction:column;gap:12px;font-size:20px;text-align:center;line-height:1.6}#end h1{font-size:56px;margin:0}
+.big{font-size:22px;padding:14px 30px;background:#ff8a2a;color:#fff}
+#nav{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:55;display:flex;gap:8px;background:rgba(40,16,6,.8);border:1px solid #ffcf6b;border-radius:24px;padding:6px 10px}
+#insp{position:fixed;left:12px;bottom:18px;z-index:50;font-size:13px}
+#top{top:64px}
+#toast{position:fixed;left:50%;top:110px;transform:translateX(-50%);z-index:56;background:#ffd24a;color:#5a2d14;border-radius:20px;padding:8px 20px;font:700 20px Georgia,serif;opacity:0;transition:opacity .3s;pointer-events:none}
+#settings{position:fixed;inset:56px 0 0 0;z-index:75;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(30,12,4,.93);text-align:center;padding:16px}
+#pause{inset:56px 0 0 0}#map canvas{width:min(94vw,620px);border-radius:12px}
+#mc{position:fixed;top:72px;right:16px;z-index:65;background:#ff2d87;color:#fff;font-size:20px;padding:12px 24px;border:3px solid #fff}
+#story{position:fixed;left:12px;bottom:56px;z-index:90;width:min(380px,calc(100vw - 24px));box-sizing:border-box;background:linear-gradient(#fff6e2,#f3dcae);color:#4a2410;border:2px solid #c9922a;border-radius:16px;padding:9px 14px 8px;box-shadow:0 6px 22px rgba(0,0,0,.4),inset 0 0 0 3px #fff8e8;font-size:15.5px;line-height:1.5;display:none}
+#story.on{display:block}
+#story h4{margin:0 0 3px;font:700 11px Georgia,serif;letter-spacing:.14em;color:#b07a1a;text-transform:uppercase}
+#story p{margin:0 0 6px;min-height:3em;font-style:italic}
+#story p.f{animation:fi .7s}@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+#story .sc{display:flex;gap:5px;align-items:center}#story .sc button{padding:4px 9px;font-size:13px;background:#6b2f12;color:#ffcf6b;border-radius:12px}#story .sc button.on{background:#ff8a2a;color:#fff}#story .sc #vb{font-size:15px;padding:7px 14px;background:#6b2f12;border:2px solid #ffcf6b}#story .sc #vb.on{background:#ff2d87;border-color:#fff;color:#fff}#story .sc{flex-wrap:wrap}
+#story small{margin-left:auto;font-size:10px;color:#9a7a50}
+#sub,#react{position:fixed;left:50%;transform:translateX(-50%);z-index:91;max-width:min(560px,92vw);text-align:center;border-radius:12px;padding:6px 14px;font:italic 16px Georgia,serif;opacity:0;transition:opacity .35s;pointer-events:none}
+#sub{display:none!important;top:150px;background:rgba(40,16,6,.85);color:#fff3dc}
+#react{top:196px;background:#fff3dc;color:#4a2410;border:2px solid #c9922a}
+#start{display:none!important}
+#site{--s1:#4a9ae8;--s2:#9ad4ff;--s3:#fff0c0;--h1:#5aa04a;--h2:#4a9040;--win:#ffe9a8;position:fixed;inset:0;z-index:200;overflow-y:auto;overflow-x:hidden;background:transparent;scroll-behavior:smooth}
+#site.night{--s1:#1a1440;--s2:#5a3a8a;--s3:#ff9a60;--h1:#2a2a5a;--h2:#241f4a;--win:#ffd27a}
+body.in #site{display:none}
+body:not(.in) :is(#nav,#top,#insp,#hud,#story,#sub,#react,#toast,#vrwrap,#back,#pause,#settings,#map,#coins,#plus,#end){display:none!important}
+.hero{position:relative;height:100vh;min-height:560px;overflow:hidden}.hero svg{position:absolute;inset:0;width:100%;height:100%}
+.hero .tx{position:absolute;top:7%;left:0;right:0;text-align:center;padding:0 16px;color:#fff3dc;text-shadow:0 3px 0 #6b2f12,0 0 24px rgba(0,0,0,.35)}
+.hero h1{margin:0;font-size:clamp(32px,7vw,76px);letter-spacing:.04em;color:#ffcf6b}.hero p{margin:8px auto 0;max-width:520px;font-style:italic;font-size:clamp(15px,2.4vw,20px)}
+.hero .cta{position:absolute;left:0;right:0;bottom:11%;display:flex;flex-direction:column;align-items:center;gap:12px}
+#site .go{font-size:clamp(16px,2.6vw,22px);padding:14px 30px;background:#ff2d87;color:#fff;border:3px solid #fff;border-radius:44px;box-shadow:0 6px 24px rgba(255,45,135,.5)}
+#site .sn{background:rgba(40,16,6,.7);color:#ffcf6b;border:1px solid #ffcf6b}
+.cue{position:absolute;bottom:2.5%;left:50%;transform:translateX(-50%);color:#fff3dc;font-size:13px;letter-spacing:.2em;animation:bn 1.6s infinite}@keyframes bn{50%{transform:translate(-50%,8px)}}
+.rooms{padding:56px max(18px,calc((100% - 1080px)/2)) 40px;background:#2a1208;text-align:center}.rooms h2{margin:0;color:#ffcf6b;font-size:clamp(26px,5vw,44px)}.rooms>p{color:#e8c9a0;margin:6px 0 28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;display:block;text-align:left;border:2px solid #c9922a;border-radius:20px;overflow:hidden;background:#3a1a0a;color:#fff3dc;opacity:0;transform:translateY(30px);transition:opacity .7s,transform .7s,box-shadow .25s}
+.card.v{opacity:1;transform:none}.card:hover,.card:focus-visible{transform:translateY(-5px);box-shadow:0 10px 30px rgba(255,207,107,.35)}
+.card .art{height:130px;display:flex;align-items:center;justify-content:center;font-size:62px}.card .bd{padding:12px 16px 16px}.card b{display:block;font-size:19px;color:#ffcf6b}.card span{display:block;font-size:14px;color:#e8c9a0;margin:3px 0 10px}.card i{font-style:normal;font-weight:700;color:#ff8ac0;font-size:14px}
+.ft{background:#2a1208;padding:26px 18px 60px;text-align:center;color:#b89a80;font-size:13px;line-height:1.6}
+#back{position:fixed;top:12px;left:12px;z-index:95;background:#ff2d87;color:#fff;border:2px solid #fff;font-size:14px}
+#joy,#jmp,#look{display:none;position:fixed;touch-action:none}#joy{left:22px;bottom:38px;width:120px;height:120px;border-radius:50%;background:rgba(255,243,220,.18);border:2px solid rgba(255,207,107,.7);z-index:52}
+#knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,207,107,.8)}#jmp{right:22px;bottom:38px;z-index:52;width:64px;height:64px;border-radius:50%;font-size:26px;padding:0;background:rgba(255,138,42,.9);color:#fff}#look{inset:0 0 0 40%;z-index:40}
+@media (pointer:coarse){body.in #joy,body.in #jmp,body.in #look{display:block}#top{display:none}#back{top:8px;left:8px;padding:6px 10px;font-size:12px}
+#nav{top:8px;left:calc(50% + 48px);max-width:calc(100vw - 140px);flex-wrap:wrap;gap:4px;padding:4px 6px}#nav button{padding:5px 7px;font-size:11px}
+#story{bottom:auto;top:84px;left:8px;width:min(340px,calc(100vw - 16px));font-size:14px}#insp{left:auto;right:18px;bottom:112px}#hud{bottom:170px;font-size:13px}#sub{top:auto;bottom:24px}}
+#coins{position:fixed;top:64px;right:12px;z-index:50;background:rgba(40,16,6,.82);border:2px solid #ffd24a;color:#ffd24a;border-radius:14px;padding:6px 14px;font:700 18px Georgia,serif;transition:transform .15s}#coins.b{transform:scale(1.25)}
+#plus{position:fixed;top:106px;right:30px;z-index:55;color:#ffd24a;font:700 24px Georgia,serif;opacity:0;pointer-events:none}#plus.go{animation:pl .8s ease-out}@keyframes pl{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}
+#end{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,226,140,.94),rgba(90,45,20,.96));text-align:center;padding:20px}#end.on{display:flex;animation:fi 1s}@keyframes fi{from{opacity:0}to{opacity:1}}
+#end .box{max-width:560px;color:#4a2410}#end small{letter-spacing:6px;font-size:16px;color:#8a3a12}#end h1{font-size:clamp(30px,6vw,52px);margin:8px 0;color:#6b2f12}#end p{font-size:20px;line-height:1.5}#end .b{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}#end button{font-size:16px;padding:12px 22px;background:#8a3a12;color:#ffe9b8}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="site"><section class="hero">
+<div class="tx"><h1>ENTER THE BOOK</h1><p>Roald Dahl’s <i>Charlie and the Chocolate Factory</i><br>“Come along. I want you to see what I see!”</p></div>
+<div class="cta"><button class="go" data-r="gate">🚪 WALK THROUGH THE GATES</button><button class="sn" id="sn">🌙 NIGHT</button></div><div class="cue">SCROLL ⌄</div></section>
+<section class="rooms" id="rooms"><h2>Choose a room</h2><p>Tap a room to step inside. Use the ← Back button to return here.</p><div class="grid">
+<button class="card" data-r="gate"><div class="art" style="background:linear-gradient(135deg,#3a8ae0,#ffcf6b)">🚪</div><div class="bd"><b>The Factory Entrance</b><span>Walk through the gates and into the factory.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="choc"><div class="art" style="background:linear-gradient(135deg,#4db33d,#7a3d1a)">🍫</div><div class="bd"><b>The Chocolate Room</b><span>Cross the bridge, take the boat at the dock.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="boat"><div class="art" style="background:linear-gradient(135deg,#ff7ab8,#050308)">🚤</div><div class="bd"><b>River &amp; Dark Tunnel</b><span>A short boat ride, then the dark tunnel.</span><i>TAP TO RIDE →</i></div></button>
+<button class="card" data-r="inv"><div class="art" style="background:linear-gradient(135deg,#d9a58a,#a78bff)">🧪</div><div class="bd"><b>The Inventing Room</b><span>Giant jars and strange machines.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="nut"><div class="art" style="background:linear-gradient(135deg,#d6ecf7,#b07a3a)">🐿️</div><div class="bd"><b>The Nut Room</b><span>Squirrels sort the nuts.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="tv"><div class="art" style="background:linear-gradient(135deg,#f4f6fa,#66aaff)">📺</div><div class="bd"><b>The Television-Chocolate Room</b><span>Chocolate travels through the TV.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="lift"><div class="art" style="background:linear-gradient(135deg,#8cc8f5,#ffd24a)">🛗</div><div class="bd"><b>The Great Glass Elevator</b><span>Step in, press the button and rise above the factory.</span><i>TAP TO ENTER →</i></div></button>
+<button class="card" data-r="shop"><div class="art" style="background:linear-gradient(135deg,#f6b6d2,#c8283c)">🍫</div><div class="bd"><b>The Wonka Vending Hall</b><span>Spend your chocolate bites on a Wonka bar.</span><i>TAP TO ENTER →</i></div></button></div></section>
+<div class="ft">Collect the little chocolate bites you find in every room, then spend them on a Wonka bar at the end. Phone: left thumb walks, drag the right side to look, ⤒ jumps. Computer: WASD + mouse, E to inspect. On a Meta Quest, open a room and press Enter VR.</div></div>
+<button id="back">← BACK TO FACTORY</button><div id="joy"><div id="knob"></div></div><button id="jmp">⤒</button><div id="look"></div>
+
+<div id="start"><h1>ENTER THE BOOK</h1>
+<p>Roald Dahl's <i>Charlie and the Chocolate Factory</i>: start in the Chocolate Room, board the boat, ride through the dark tunnel and explore Wonka's rooms. Choose your atmosphere:</p>
+<div><button class="big" id="day">☀️ DAY</button> <button class="big" id="night">🌙 NIGHT</button></div><button id="ctl">CONTROLS</button>
+<p id="ctlp" style="display:none;font-size:14px">WASD / arrows walk · Shift run · Space jump · E interact · F camera · M map · T golden ticket · H home · Esc pause · Story: N skip · R replay · V voice · P pause · C panel<br>VR: left stick walk · right stick 30° turn · trigger interact · A jump · B sound · X ticket · Y map · left-stick click home · right-stick click day/night</p>
+<p>On a Meta Quest, press the pink <b>Enter VR</b> button.</p></div>
+<div id="nav"><button id="home">🏠 HOME</button><button id="mapb">🗺️ MAP</button><button id="tkt">🎟️ GOLDEN TICKET</button><button id="stb">📖 STORY</button><button id="set">⚙️ SETTINGS</button></div>
+<div id="top"><b id="room"></b><br><span id="next"></span><br><i id="obj" style="color:#ffcf6b"></i></div><button id="insp">INSPECT (E)</button>
+<div id="map"><button id="mc">✕ CLOSE MAP</button></div><div id="hud"></div><div id="toast"></div>
+<div id="settings"><h2 style="color:#ffcf6b;margin:0">SETTINGS</h2><button id="snd">SOUND ON</button><button id="dn">SWITCH TO NIGHT</button><button id="vrj">VR JUMPING: ON</button>
+<p style="max-width:420px">VR comfort: smooth movement follows your head, turning is in 30° snaps, there is no camera bob in VR.</p><button id="sclose">CLOSE</button></div>
+<div id="pause"><h2 style="color:#ffcf6b;margin:0">PAUSED</h2><button id="resume">RESUME</button><button id="pb" class="rw">← BACK TO THE FACTORY</button></div><div id="vrwrap"></div>
+<div id="story"><h4 id="sh"></h4><p id="sp"></p><div class="sc"><button id="vb" class="on" title="Narration (V)">🔊 Narration ON</button><button id="rp" title="Replay (R)">↻ Replay</button><button id="pp" title="Pause (P)">⏸</button><button id="sk" title="Skip (N)">⏭ Skip</button><button id="cl" title="Close (C)">✕</button><small>R · P · N · V · C</small></div></div>
+<div id="sub"></div><div id="react"></div><div id="coins">🍫 <b id="cn">0</b> bites</div><div id="plus">+1 🍫</div>
+<div id="end"><div class="box"><small>THE END</small><h1>🍫 You got your Wonka bar!</h1><p>“Thank you for coming along with me.<br>And remember... never stop dreaming!”<br><i>Charlie</i></p><div class="b"><button id="again">↻ PLAY AGAIN</button><button id="eback">← BACK TO THE FACTORY</button></div></div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+/* ===== 1. RENDERER / SCENE / RIG ===== */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.xr.enabled = true; renderer.xr.setReferenceSpaceType('local-floor');   // y=0 = real floor in VR
+document.body.appendChild(renderer.domElement);
+/* Only show the Enter VR button when immersive VR is really supported, so "VR NOT SUPPORTED" / "WEBXR NOT AVAILABLE" is never written on screen */
+if (navigator.xr && navigator.xr.isSessionSupported) {
+  navigator.xr.isSessionSupported('immersive-vr').then(ok => { if (ok) document.getElementById('vrwrap').appendChild(VRButton.createButton(renderer)); }).catch(() => {});
+}
+const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0xa9dcff, .01); scene.background = new THREE.Color(0xa9dcff);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, .05, 300);
+const rig = new THREE.Group(); rig.add(camera); scene.add(rig);   // we move the RIG; camera sits inside it
+const EYE = 1.6; camera.position.y = EYE;                          // desktop eye height; VR sets this to 0
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const hemi = new THREE.HemisphereLight(0xfff0c8, 0x6a3a1c, 1.2); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffd08a, 2.4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -.0005; sun.shadow.radius = 4;
+Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 120 }); scene.add(sun, sun.target);
+const warm = [0, 1].map(() => { const l = new THREE.PointLight(0xffa640, 60, 40, 1.5); scene.add(l); return l; });
+
+/* ===== 2. HELPERS: cached geometry, shared materials, collision ===== */
+const gc = {}, geo = (k, f) => gc[k] || (gc[k] = f());          // geometry cache: same shape = same buffer
+const box = (w, h, d) => geo(`b${w},${h},${d}`, () => new THREE.BoxGeometry(w, h, d));
+const cyl = (a, b, h, s = 14) => geo(`c${a},${b},${h},${s}`, () => new THREE.CylinderGeometry(a, b, h, s));
+const sph = (r, s = 14) => geo(`s${r},${s}`, () => new THREE.SphereGeometry(r, s, 10));
+const cone = (r, h, s = 14) => geo(`n${r},${h},${s}`, () => new THREE.ConeGeometry(r, h, s));
+const tor = (r, t, a = 6.2832) => geo(`t${r},${t},${a}`, () => new THREE.TorusGeometry(r, t, 8, 18, a));
+const mats = {}, glowMats = [];
+const M = (c, o = {}) => mats[c + JSON.stringify(o)] || (mats[c + JSON.stringify(o)] = new THREE.MeshStandardMaterial({ color: c, roughness: .5, ...o }));
+const G = (c, i = 1) => { const m = new THREE.MeshStandardMaterial({ color: 0x221108, emissive: c, emissiveIntensity: i }); m.userData.base = i; glowMats.push(m); return m; };
+const GLASS = M(0xcfefff, { transparent: true, opacity: .25, roughness: .05 });
+function mesh(g, m, x = 0, y = 0, z = 0, p = scene) { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; p.add(o); return o; }
+const PAL = [0xff5fa2, 0x7be0ff, 0xffe45e, 0xa78bff, 0x7dffb2];
+const hillsA = [], spinners = [], pistons = [], bubbles = [], squirrels = [], arrows = [], items = [];
+
+// Each ROOM is a group at its own x offset (rooms never overlap) with its own list of collision footprints.
+const rooms = {}; let B = null;
+function newRoom(id, ox, { w = 44, d = 40, h = 16, floor = 0xe8c9a0, wall = 0xffe3b8, ceil = 0xfff6e0, outdoor = false } = {}) {
+  const g = new THREE.Group(); g.position.x = ox; scene.add(g);
+  B = rooms[id] = { id, ox, g, w, d, h, solids: [], doors: [] };
+  mesh(box(w, .2, d), M(floor, { roughness: .9 }), 0, -.1, 0, g).castShadow = false;
+  const t = .6, W = [[0, -d / 2, w, t], [0, d / 2, w, t], [-w / 2, 0, t, d], [w / 2, 0, t, d]];
+  for (const [x, z, ww, dd] of W) { addSolid(x, z, ww / 2, dd / 2); if (!outdoor) { const m = mesh(box(ww, h, dd), M(wall), x, h / 2, z, g); m.castShadow = false; } }
+  if (!outdoor) { const c = mesh(box(w, .4, d), M(ceil), 0, h, 0, g); c.castShadow = false; }
+}
+function addSolid(x, z, hw, hd, rot = 0, h = 99) { B.solids.push({ x: B.ox + x, z, hw, hd, h, c: Math.cos(rot), s: Math.sin(rot) }); }   // h = height: you can jump OVER low solids
+function collide(p, r) {                                          // push player out of every footprint in THIS room
+  for (const o of room.solids) { if (p.y > o.h) continue;
+    const dx = p.x - o.x, dz = p.z - o.z, lx = dx * o.c - dz * o.s, lz = dx * o.s + dz * o.c;
+    const ex = lx - clamp(lx, -o.hw, o.hw), ez = lz - clamp(lz, -o.hd, o.hd), d = Math.hypot(ex, ez);
+    if (d < r) { const nx = d > 1e-6 ? lx + ex / d * (r - d) : o.hw + r, nz = d > 1e-6 ? lz + ez / d * (r - d) : lz;
+      p.x = o.x + nx * o.c + nz * o.s; p.z = o.z - nx * o.s + nz * o.c; }
+  }
+}
+// place(): stamps one factory-made object into the current room, then registers its footprints (userData.feet)
+function place(make, x, z, rot = 0, s = 1, ...a) {
+  const g = make(...a); g.position.set(x, 0, z); g.rotation.y = rot; g.scale.setScalar(s); B.g.add(g);
+  for (const [lx, lz, hw, hd, hh] of g.userData.feet || [])
+    addSolid(x + (lx * Math.cos(rot) + lz * Math.sin(rot)) * s, z + (-lx * Math.sin(rot) + lz * Math.cos(rot)) * s, hw * s, hd * s, rot, hh);
+  return g;
+}
+function addItem(obj, title, text, { lift = false, range = 3, use = null, tag = null } = {}) {
+  obj.updateWorldMatrix(true, false); const a = new THREE.Vector3(); obj.getWorldPosition(a);
+  const it = { obj, title, text, lift, range, use, tag, anchor: a, home: obj.position.clone(), s0: obj.scale.x, near: false }; items.push(it); return it;
+}
+function addDoor(x, z, to) {                                      // doorway trigger + guiding arrow
+  B.doors.push({ x: B.ox + x, z, r: 1.8, to });
+  const a = mesh(cone(.5, 1, 4), G(0xffcf6b, 2), x, 5, z, B.g); a.rotation.x = Math.PI; a.castShadow = false; arrows.push(a);
+}
+
+/* ===== 3. REUSABLE FACTORY FUNCTIONS ===== */
+function createRoomSign(text = '') {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = '#6b2f12'; x.fillRect(0, 0, 512, 128); x.strokeStyle = '#ffcf6b'; x.lineWidth = 8; x.strokeRect(6, 6, 500, 116);
+  x.fillStyle = '#ffcf6b'; x.font = 'bold 40px Georgia'; x.textAlign = 'center'; x.fillText(text, 256, 78, 480);
+  const g = new THREE.Group(); mesh(new THREE.PlaneGeometry(8, 2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }), 0, 0, 0, g); return g;
+}
+function createFactoryDoor() {
+  const g = new THREE.Group();
+  mesh(box(4.2, 5, .5), M(0xe8344e), 0, 2.5, 0, g); mesh(box(3, 4.2, .3), G(0xffb347, 1.2), 0, 2.2, .15, g);
+  mesh(box(.1, 4.2, .35), M(0x6b2f12), 0, 2.2, .2, g); return g;
+}
+function createCandyTree(i = 0) {
+  const g = new THREE.Group();
+  for (let k = 0; k < 5; k++) mesh(cyl(.3, .32, .9), M(k % 2 ? 0xffffff : 0xe8344e), 0, .45 + k * .9, 0, g);
+  mesh(sph(1.7), M(PAL[i % 5], { roughness: .25 }), 0, 5.7, 0, g); mesh(sph(1.1), M(PAL[(i + 2) % 5], { roughness: .25 }), 1.3, 4.7, .6, g);
+  g.userData.feet = [[0, 0, .3, .3]]; return g;
+}
+function createEdibleFlower(i = 0) {                              // buttercup-style edible flower
+  const g = new THREE.Group(); mesh(cyl(.06, .06, 1.2, 6), M(0x55c060), 0, .6, 0, g);
+  for (let k = 0; k < 6; k++) { const p = mesh(sph(.22, 8), M(i % 2 ? 0xffe45e : 0xff9ccf), Math.cos(k) * .3, 1.3, Math.sin(k) * .3, g); p.scale.y = .5; }
+  mesh(sph(.16, 8), M(0xe8a020), 0, 1.35, 0, g); return g;
+}
+function createChocolatePipe(len = 10, horizontal = false) {      // glass pipe with chocolate inside
+  const g = new THREE.Group(), o = new THREE.Group(); g.add(o);
+  mesh(cyl(.7, .7, len), GLASS, 0, 0, 0, o).castShadow = false; mesh(cyl(.5, .5, len - .1), M(0x5a2d14, { roughness: .2, emissive: 0x2a1005 }), 0, 0, 0, o).castShadow = false;
+  if (horizontal) { o.rotation.z = Math.PI / 2; o.position.y = 9; } else o.position.y = len / 2; return g;
+}
+function createChocolateRiver(w = 44, d = 6) {
+  const g = new THREE.Group(), r = mesh(new THREE.PlaneGeometry(w, d), M(0x4a2511, { roughness: .1, metalness: .35, emissive: 0x2a1005, emissiveIntensity: .35 }), 0, .03, 0, g);
+  r.rotation.x = -Math.PI / 2; r.castShadow = false;
+  for (const z of [-d / 2, d / 2]) mesh(box(w, .3, .5), M(0xf7d9a8), 0, .15, z, g); return g;
+}
+function createCandyMachine(col = 0xff7ac8) {
+  const g = new THREE.Group(), met = M(col, { metalness: .4, roughness: .25 });
+  mesh(box(3, 1, 2.4), M(0x6b4a3a), 0, .5, 0, g); mesh(cyl(1, 1.1, 2.4, 18), met, -.4, 2.2, 0, g); mesh(cyl(1.03, 1.03, .7, 18), G(0xffb347, 1.2), -.4, 2.5, 0, g);
+  mesh(sph(1.05), met, -.4, 3.4, 0, g).scale.y = .6;
+  const f = mesh(cone(.6, 1.2), M(0xdddddd, { metalness: .7 }), 1, 2.5, 0, g); f.rotation.x = Math.PI;
+  mesh(cyl(.16, .16, 1.4), M(0xb87333, { metalness: .7 }), 1, 1.4, 0, g);
+  spinners.push({ m: mesh(tor(.5, .13), M(0xffd23f, { metalness: .6 }), .9, 1.1, 1.25, g), g });
+  pistons.push({ m: mesh(cyl(.15, .15, 1), M(0xcccccc, { metalness: .8 }), -1.3, 1.6, 1.25, g), base: 1.6, g });
+  g.userData.feet = [[0, 0, 1.6, 1.3]]; return g;
+}
+function createVat() {                                            // bubbling candy mixture
+  const g = new THREE.Group(); mesh(cyl(1.6, 1.8, 2.2, 18), M(0xb87333, { metalness: .6 }), 0, 1.1, 0, g);
+  mesh(cyl(1.4, 1.4, .1, 18), G(PAL[Math.random() * 5 | 0], 1.5), 0, 2.2, 0, g);
+  for (let k = 0; k < 4; k++) bubbles.push({ m: mesh(sph(.25, 8), M(0xffffff, { emissive: 0x888888 }), Math.cos(k * 1.6) * .6, 2.4, Math.sin(k * 1.6) * .6, g), p: k * 1.5 });
+  g.userData.feet = [[0, 0, 1.7, 1.7]]; return g;
+}
+function createOompa() {                                          // small book-style Oompa-Loompa
+  const g = new THREE.Group(); mesh(cyl(.45, .55, 1.3), M(0x8a5a30), 0, .65, 0, g);
+  mesh(sph(.42), M(0xffd9c8), 0, 1.6, 0, g); mesh(sph(.44), M(0x6b4a28), 0, 1.78, -.05, g).scale.y = .6; return g;
+}
+function createSquirrel() {
+  const g = new THREE.Group(), fur = M(0x9a6a3a);
+  mesh(sph(.35), fur, 0, .4, 0, g).scale.set(1, 1.2, 1); mesh(sph(.4), fur, 0, .5, -.45, g).scale.set(.6, 1.4, .7);
+  const h = mesh(sph(.22), fur, 0, .85, .15, g); mesh(sph(.12), M(0x4a2a12), 0, .4, .3, g);   // head + nut
+  squirrels.push({ h, p: Math.random() * 6 }); return g;
+}
+function createStation() {                                        // sorting station: table, basket for good nuts, chute for bad
+  const g = new THREE.Group(); mesh(box(2.6, .9, 1.4), M(0xc98a52), 0, .45, 0, g);
+  mesh(cyl(.5, .4, .5), M(0xe8c070), 1.9, .25, 0, g);              // good-nut basket
+  mesh(cyl(.5, .5, .1), M(0x111111), -1.9, .06, 0, g); mesh(cone(.7, .5), M(0x777777, { metalness: .6 }), -1.9, .35, 0, g).scale.y = .5;   // disposal chute
+  const nut = mesh(sph(.14, 8), M(0x5a3a1a), 0, 1, 0, g); g.userData.nut = nut; g.userData.feet = [[0, 0, 1.3, .7]]; return g;
+}
+function createElevator() {                                       // Great Glass Elevator
+  const g = new THREE.Group(); mesh(box(3.2, .2, 3.2), M(0xffd23f, { metalness: .6 }), 0, .1, 0, g);
+  for (const [x, z] of [[-1.6, -1.6], [1.6, -1.6], [-1.6, 1.6], [1.6, 1.6]]) mesh(cyl(.08, .08, 3.6, 8), M(0xffd23f, { metalness: .6 }), x, 1.9, z, g);
+  mesh(box(3.2, 3.6, 3.2), GLASS, 0, 1.9, 0, g).castShadow = false; mesh(box(3.4, .2, 3.4), M(0xffd23f, { metalness: .6 }), 0, 3.8, 0, g);
+  mesh(sph(.12), G(0x7dffb2, 2), 1.4, 1.2, -1.6, g); return g;
+}
+function hullShape(k = 1, kz = 1) {                               // top-down boat outline: pointed bow (+x), rounded stern
+  const sh = new THREE.Shape(); sh.moveTo(-2.2 * k, -.9 * kz); sh.lineTo(1 * k, -.9 * kz); sh.quadraticCurveTo(2.6 * k, -.6 * kz, 3.1 * k, 0);
+  sh.quadraticCurveTo(2.6 * k, .6 * kz, 1 * k, .9 * kz); sh.lineTo(-2.2 * k, .9 * kz); sh.quadraticCurveTo(-2.5 * k, 0, -2.2 * k, -.9 * kz); return sh; }
+function createBoat() {                                           // the pink rowing boat: hollow hull, gold rim, benches, oars, bow lantern
+  const g = new THREE.Group(), pink = M(0xff7ab8, { roughness: .35 }), gold = M(0xd9a82a, { roughness: .3, metalness: .5 });
+  const ext = (sh, d, bev) => { const e = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: bev > 0, bevelSize: bev, bevelThickness: bev, bevelSegments: 2, curveSegments: 14 }); e.rotateX(-Math.PI / 2); return e; };
+  const hull = hullShape(); hull.holes.push(hullShape(.9, .84));
+  mesh(geo('boatHull', () => ext(hull, .72, .05)), pink, 0, .05, 0, g);
+  const rim = hullShape(1.02, 1.04); rim.holes.push(hullShape(.9, .84)); mesh(geo('boatRim', () => ext(rim, .06, 0)), gold, 0, .8, 0, g);
+  mesh(geo('boatFloor', () => ext(hullShape(.92, .88), .05, 0)), M(0xfff0c2), 0, .3, 0, g);
+  for (const x of [-.9, .8]) mesh(box(.5, .12, 1.5), M(0xfff0c2), x, .6, 0, g);
+  mesh(sph(.16, 10), gold, 3.1, .85, 0, g); mesh(cyl(.05, .05, 1.3, 6), M(0x6a4a2a), 2.4, 1.4, 0, g); mesh(sph(.18, 10), GS(0xffe08a, 1.8), 2.4, 2.1, 0, g);
+  for (const sd of [-1, 1]) { const o = new THREE.Group(); o.position.set(-.1, .95, sd * .85); o.rotation.x = sd * -.3; g.add(o);
+    const sh = mesh(cyl(.04, .04, 2.2, 6), M(0xc98a52), 0, 0, sd * 1.1, o); sh.rotation.x = Math.PI / 2; mesh(box(.55, .05, .26), M(0xfff0c2), 0, 0, sd * 2.2, o); }
+  return g; }
+function createFactoryBuilding(w = 30, h = 10, d = 12) {
+  const g = new THREE.Group(); mesh(box(w, h, d), M(0xf29ac2), 0, h / 2, 0, g); mesh(box(w + 1, 1, d + 1), M(0xe8344e), 0, h + .5, 0, g);
+  for (let k = -1; k <= 1; k++) { for (let j = 0; j < 8; j++) mesh(cyl(.9, 1, 2.5), M(j % 2 ? 0xffffff : 0xe8344e), k * 10, h + 2 + j * 2.4, 0, g); }
+  for (let k = 0; k < 6; k++) mesh(box(1.6, 2.2, .1), G(0xffd27a, 1.3), -10 + k * 4, h * .6, d / 2 + .05, g);
+  g.userData.feet = [[0, 0, w / 2, d / 2]]; return g;
+}
+function createPedestal() {                                       // plain pedestal; the thing on top is added by the caller
+  const g = new THREE.Group(); mesh(cyl(.7, .85, .6, 18), M(0xfff0c2), 0, .3, 0, g); mesh(cyl(.8, .8, .1, 18), M(0xe8344e), 0, .65, 0, g); return g;
+}
+
+/* ===== 4. BUILD THE ROOMS ===== */
+const wallSign = (txt, y = 7, z = -19.6) => { const s = place(createRoomSign, 0, z, 0, 1, txt); s.position.y = y; };
+const tallPipes = (n, z) => { for (let i = 0; i < n; i++) place(createChocolatePipe, -18 + i * 36 / (n - 1), z, 0, 1, 14); };
+
+// ===== NEW FACTORIES =====
+const conveyors = [], floaters = [], puffs = [], rings = [], gsc = {};
+const GS = (c, i = 1) => gsc[c + '_' + i] || (gsc[c + '_' + i] = G(c, i));          // shared glow material per colour
+function steam(g, x, y, z) { for (let k = 0; k < 4; k++) { const m = mesh(sph(1, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .2, depthWrite: false }), x, y, z, g); m.castShadow = m.receiveShadow = false; puffs.push({ m, x, y, z, o: k / 4 }); } }
+function createBridge() {                                          // candy-cane bridge across the river (crosses along z)
+  const g = new THREE.Group(); mesh(box(3.2, .14, 7.6), M(0xf7d9a8), 0, .07, 0, g);
+  for (const sx of [-1.65, 1.65]) { for (let k = 0; k < 5; k++) mesh(cyl(.08, .08, 1, 8), M(k % 2 ? 0xffffff : 0xe8344e), sx, .6, -3.4 + k * 1.7, g);
+    mesh(box(.12, .12, 7.6), M(0xe8344e), sx, 1.1, 0, g); const a = mesh(tor(3.8, .12, Math.PI), M(0xff5fa2), sx, 1.1, 0, g); a.rotation.y = Math.PI / 2; a.scale.y = .4; }
+  g.userData.feet = [[-1.7, 0, .08, 3.8], [1.7, 0, .08, 3.8]]; return g; }
+function createArch(w = 8, h = 8) {
+  const g = new THREE.Group(); for (const s of [-1, 1]) for (let k = 0; k < 4; k++) mesh(cyl(.35, .35, h / 4), M(k % 2 ? 0xffffff : 0xe8344e), s * w / 2, h / 8 + k * h / 4, 0, g);
+  mesh(tor(w / 2, .35, Math.PI), M(0xff5fa2, { roughness: .3 }), 0, h, 0, g); return g; }
+function createConveyor(len = 8) {
+  const g = new THREE.Group(); mesh(box(len, .6, 1.4), M(0x555566), 0, .6, 0, g); mesh(box(len, .12, 1.2), M(0x222233), 0, .95, 0, g);
+  for (let k = 0; k < 4; k++) conveyors.push({ m: mesh(sph(.28, 8), M(PAL[k % 5], { roughness: .2 }), 0, 1.3, 0, g), len, o: k / 4 });
+  g.userData.feet = [[0, 0, len / 2, .7]]; return g; }
+function createNutBin() {
+  const g = new THREE.Group(); mesh(cyl(1.2, 1, 1.6, 14), M(0x8a5a30), 0, .8, 0, g);
+  for (let k = 0; k < 9; k++) mesh(sph(.28, 8), M(0xb07a3a), Math.cos(k * 2.4) * .35 * (k % 3), 1.75 + (k % 3) * .15, Math.sin(k * 2.4) * .35 * (k % 3), g);
+  g.userData.feet = [[0, 0, 1.2, 1.2]]; return g; }
+function createCharacter() {                                       // articulated body: every limb is a pivot Group, so rotation.x swings it
+  const g = new THREE.Group(), skin = M(0xffd9b0), coat = M(0x2ec4b6), P = {};
+  P.torso = new THREE.Group(); P.torso.position.y = 1.05; g.add(P.torso); mesh(cyl(.2, .24, .6), coat, 0, .2, 0, P.torso);
+  P.head = new THREE.Group(); P.head.position.y = .62; P.torso.add(P.head); mesh(sph(.24), skin, 0, 0, 0, P.head); mesh(sph(.25), M(0x5a3a1a), 0, .07, .03, P.head).scale.y = .7;
+  for (const x of [-.08, .08]) mesh(sph(.03, 6), M(0x222222), x, .02, -.235, P.head);
+  for (const [n, sd] of [['armL', -1], ['armR', 1]]) { const a = new THREE.Group(); a.position.set(.3 * sd, .42, 0); P.torso.add(a); P[n] = a; mesh(cyl(.06, .06, .5, 8), coat, 0, -.25, 0, a); mesh(sph(.075, 8), skin, 0, -.55, 0, a); }
+  for (const [n, sd] of [['legL', -1], ['legR', 1]]) { const l = new THREE.Group(); l.position.set(.12 * sd, .95, 0); g.add(l); P[n] = l; mesh(cyl(.08, .07, .85, 8), M(0x7a5cff), 0, -.43, 0, l); mesh(box(.14, .08, .28), M(0x2a1a10), 0, -.9, -.06, l); }
+  g.userData.P = P; return g; }
+
+// ===== EXTRA FACTORIES: lab equipment and scenery =====
+const fizz = [];
+function createFlask(col = 0x7be0ff, k = 1) {                      // conical glass flask, glowing liquid, rising bubbles
+  const g = new THREE.Group(); mesh(cone(.25 * k, .5 * k, 12), GLASS, 0, .25 * k, 0, g); mesh(cyl(.07 * k, .07 * k, .3 * k, 8), GLASS, 0, .65 * k, 0, g); mesh(cone(.2 * k, .3 * k, 12), GS(col, 1.4), 0, .17 * k, 0, g);
+  for (let j = 0; j < 3; j++) fizz.push({ m: mesh(sph(.04 * k, 6), M(0xffffff), (j - 1) * .06 * k, .15 * k, 0, g), y: .12 * k, h: .35 * k, p: j / 3 }); return g; }
+function createLabBench(len = 6, hue = 0) {                        // bench with flasks, test tubes and a burner flame
+  const g = new THREE.Group(); mesh(box(len, 1, 1.3), M(0xd8d0e0), 0, .5, 0, g); mesh(box(len + .2, .1, 1.5), M(0x6b3a1f), 0, 1.05, 0, g);
+  for (let j = 0; j < 3; j++) { const f = createFlask(PAL[(j + hue) % 5], 1.2); f.position.set(-len / 2 + 1 + j * 1.3, 1.1, (j % 2 - .5) * .4); g.add(f); }
+  for (let j = 0; j < 5; j++) mesh(cyl(.06, .06, .5, 6), GS(PAL[(j + hue + 1) % 5], 1.3), len / 2 - 1.4 + j * .22, 1.4, .3, g);
+  mesh(cyl(.12, .15, .25, 8), M(0x888899), len / 2 - .4, 1.22, -.3, g); mesh(cone(.07, .2, 6), G(0xff8a2a, 2.2), len / 2 - .4, 1.45, -.3, g);
+  g.userData.feet = [[0, 0, len / 2, .7]]; return g; }
+function createReactor() {                                         // central cocoa reactor: glass sphere, glowing chocolate core, spinning rings, feed tube
+  const g = new THREE.Group(); mesh(cyl(1.8, 2.2, .8, 16), M(0xb0a0b8), 0, .4, 0, g); mesh(sph(1.6, 18), GLASS, 0, 2.6, 0, g); mesh(sph(1.2, 14), G(0x7a3d1a, 1.3), 0, 2.6, 0, g);
+  const r1 = new THREE.Group(); r1.position.y = 2.6; g.add(r1); mesh(tor(1.9, .09), M(0xffd23f), 0, 0, 0, r1); spinners.push({ m: r1, g });
+  const r2 = new THREE.Group(); r2.position.y = 2.6; r2.rotation.x = 1.2; g.add(r2); mesh(tor(2.2, .07), M(0xff7ab8), 0, 0, 0, r2); spinners.push({ m: r2, g });
+  mesh(cyl(.3, .3, 5, 10), GLASS, 0, 6, 0, g); mesh(cyl(.2, .2, 5, 8), G(0x7a3d1a, 1), 0, 6, 0, g); steam(g, 0, 5.2, 0);
+  g.userData.feet = [[0, 0, 2.2, 2.2]]; return g; }
+function createTank(col = 0xffd0e6) {                              // tempering tank with a glowing chocolate window
+  const g = new THREE.Group(); mesh(cyl(1.2, 1.3, 3.4, 16), M(col, { roughness: .3 }), 0, 1.7, 0, g); mesh(cyl(1.22, 1.22, 1, 16), GLASS, 0, 2.4, 0, g); mesh(cyl(1, 1, .9, 16), G(0x7a3d1a, 1.2), 0, 2.4, 0, g);
+  mesh(sph(1.2, 14), M(col, { roughness: .3 }), 0, 3.4, 0, g).scale.y = .5; mesh(cyl(.12, .12, 2, 8), M(0xffb38a), 0, 4.8, 0, g);
+  g.userData.feet = [[0, 0, 1.3, 1.3]]; return g; }
+function createControlPanel() {
+  const g = new THREE.Group(); mesh(box(3, 1.1, 1.2), M(0xe8e2d8), 0, .55, 0, g); mesh(box(3, .8, .1), M(0xe8e2d8), 0, 1.5, -.35, g).rotation.x = -.5; mesh(box(2.4, .5, .05), G(0x66ffcc, 1.2), 0, 1.5, -.28, g).rotation.x = -.5;
+  for (let j = 0; j < 6; j++) mesh(sph(.09, 6), G(PAL[j % 5], 2), -1.1 + j * .44, 1.15, .1, g); g.userData.feet = [[0, 0, 1.5, .6]]; return g; }
+function createGear(r = 1.4, col = 0xffd23f) {                     // wall gear that turns
+  const g = new THREE.Group(), w = new THREE.Group(); g.add(w); mesh(tor(r, .16), M(col), 0, 0, 0, w); for (let j = 0; j < 3; j++) mesh(box(r * 2, .12, .12), M(col), 0, 0, 0, w).rotation.z = j * Math.PI / 3; mesh(sph(.25, 8), M(0xff7ab8), 0, 0, 0, w);
+  spinners.push({ m: w, g }); return g; }
+function createChocoBelt(len = 10, kind = 'bar') {                 // conveyor carrying chocolate bars (or nuts) under a glass cooling hood
+  const g = new THREE.Group(); mesh(box(len, .6, 1.4), M(0xe8e2d8), 0, .6, 0, g); mesh(box(len, .12, 1.2), M(0x6a5a60), 0, .95, 0, g); mesh(box(len * .5, .9, 1.5), GLASS, 0, 1.7, 0, g);
+  for (let j = 0; j < 6; j++) conveyors.push({ m: kind === 'bar' ? mesh(box(.7, .18, .4), M(j % 2 ? 0x5a2d14 : 0x7a4a24, { roughness: .3 }), 0, 1.1, 0, g) : mesh(sph(.22, 8), M(0xb07a3a), 0, 1.2, 0, g), len, o: j / 6 });
+  g.userData.feet = [[0, 0, len / 2, .7]]; return g; }
+function createLollipop(i = 0, h = 4) { const g = new THREE.Group(), r = h * .28, c = PAL[i % 5];
+  mesh(cyl(.08, .08, h, 8), M(i % 2 ? 0xffffff : 0xff9cc8), 0, h / 2, 0, g); mesh(sph(r, 16), M(c, { roughness: .3, emissive: c, emissiveIntensity: .3 }), 0, h + r * .5, 0, g); mesh(tor(r * .5, r * .12), M(0xffffff), 0, h + r * .5, r * .8, g);
+  g.userData.feet = [[0, 0, .25, .25]]; return g; }
+function createCandyCane(h = 4) { const g = new THREE.Group(); for (let j = 0; j < 4; j++) mesh(cyl(.14, .14, h / 4, 10), M(j % 2 ? 0xffffff : 0xe8344e), 0, h / 8 + j * h / 4, 0, g);
+  mesh(tor(h * .14, .14, Math.PI), M(0xe8344e), h * .14, h, 0, g); g.userData.feet = [[0, 0, .2, .2]]; return g; }
+function createMushroom(i = 0) { const g = new THREE.Group(), c = PAL[i % 5]; mesh(cyl(.25, .35, 1.2, 10), M(0xfff0c2), 0, .6, 0, g); mesh(sph(.9, 14), M(c, { roughness: .3 }), 0, 1.3, 0, g).scale.y = .6;
+  for (let j = 0; j < 4; j++) mesh(sph(.12, 6), M(0xffffff), Math.cos(j * 1.6) * .55, 1.6, Math.sin(j * 1.6) * .55, g); g.userData.feet = [[0, 0, .4, .4]]; return g; }
+function createRock() { const g = new THREE.Group(); mesh(sph(.9, 10), M(0x6b3a1f, { roughness: .25 }), 0, .4, 0, g).scale.set(1.3, .7, 1); g.userData.feet = [[0, 0, 1, .8]]; return g; }
+function createHopper() {                                          // nut hopper: funnel on legs
+  const g = new THREE.Group(), w = M(0xc98a52); const c = mesh(cone(1.3, 1.6, 12), w, 0, 2.6, 0, g); c.rotation.x = Math.PI; mesh(cyl(1.3, 1.3, .5, 12), w, 0, 3.65, 0, g); mesh(cyl(.25, .25, 1.2, 8), M(0x8a5a30), 0, 1.2, 0, g);
+  for (let j = 0; j < 5; j++) mesh(sph(.22, 8), M(0xb07a3a), Math.cos(j * 1.3) * .6, 4.05, Math.sin(j * 1.3) * .6, g); g.userData.feet = [[0, 0, 1.3, 1.3]]; return g; }
+function createStump() { const g = new THREE.Group(); mesh(cyl(.8, .9, .9, 12), M(0x9a6a3a), 0, .45, 0, g); g.userData.feet = [[0, 0, .9, .9]]; return g; }
+function createDish() { const g = new THREE.Group(); mesh(cyl(.1, .1, 3, 6), M(0x888899), 0, 1.5, 0, g); const d = mesh(geo('dish', () => new THREE.SphereGeometry(1.3, 14, 8, 0, 6.2832, 0, 1.1)), M(0xe0e8f0, { side: THREE.DoubleSide }), 0, 3.2, 0, g); d.rotation.x = -1.2; mesh(sph(.12, 6), G(0xff5a5a, 2), 0, 3.5, .8, g); g.userData.feet = [[0, 0, .3, .3]]; return g; }
+function createStageLight() { const g = new THREE.Group(); mesh(cyl(.08, .08, 5, 6), M(0x888899), 0, 2.5, 0, g); mesh(sph(.4, 10), GS(0x9fe8ff, 1.6), 0, 5.1, 0, g); g.userData.feet = [[0, 0, .2, .2]]; return g; }
+function createTVCam() { const o = new THREE.Group(); mesh(box(1.6, 1.2, 1.2), M(0xf0f4f8), 0, 1.6, 0, o); const l = mesh(cyl(.4, .5, 1.2), M(0x6a7a8a), 1.1, 1.6, 0, o); l.rotation.z = Math.PI / 2; for (const sd of [1, -1]) mesh(cyl(.05, .05, 1.1, 6), M(0x888899), 0, .55, .5 * sd, o); o.userData.feet = [[0, 0, .9, .7]]; return o; }
+
+// ===== REFERENCE-STYLE FACTORIES =====
+const drifters = [], falls = [], dm2 = new THREE.Object3D();
+function skyDome(top, mid, bot) {                                  // gradient sky sphere that follows the player
+  const m = new THREE.Mesh(new THREE.SphereGeometry(250, 16, 12), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); m.renderOrder = -1;
+  const pa = m.geometry.attributes.position, col = new Float32Array(pa.count * 3), a = new THREE.Color(top), b = new THREE.Color(mid), c = new THREE.Color(bot), t = new THREE.Color();
+  for (let i = 0; i < pa.count; i++) { const y = clamp(pa.getY(i) / 150 + .15, 0, 1); y < .5 ? t.lerpColors(c, b, y * 2) : t.lerpColors(b, a, (y - .5) * 2); col.set([t.r, t.g, t.b], i * 3); }
+  m.geometry.setAttribute('color', new THREE.BufferAttribute(col, 3)); m.visible = false; scene.add(m); return m; }
+const skyAn = skyDome(0x2a2a7a, 0x9a5aa0, 0xff9a60), skyBn = skyDome(0xffa030, 0xffd070, 0xfff0b0), skyAd = skyDome(0x3a8ae0, 0x8cc8f5, 0xdff2ff), skyBd = skyDome(0x4a9ae8, 0x9ad4ff, 0xfff0c0);
+const skyGd = skyDome(0x3a8ae0, 0x8cc8f5, 0xe8f6ff), skyGn = skyDome(0x0a0a30, 0x2a2a6a, 0x6a5a9a);
+const skies = { A: [skyAd, skyAn], B: [skyBd, skyBn], G: [skyGd, skyGn] };       // dusk (entrance) and golden sunset (chocolate garden)
+const ctex = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+function createRoundSign(lines) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = '#2a1a10'; x.beginPath(); x.arc(256, 256, 250, 0, 6.2832); x.fill(); x.strokeStyle = '#d9a82a'; x.lineWidth = 14; x.stroke(); x.beginPath(); x.arc(256, 256, 218, 0, 6.2832); x.lineWidth = 5; x.stroke();
+  x.fillStyle = '#f5d27a'; x.textAlign = 'center'; lines.forEach(([t, sz, y]) => { x.font = `bold ${sz}px Georgia`; x.fillText(t, 256, y, 400); });
+  const g = new THREE.Group(); mesh(new THREE.CircleGeometry(3, 32), new THREE.MeshBasicMaterial({ map: ctex(c) }), 0, 0, 0, g).castShadow = false; return g; }
+function createGlowText(t, w = 8) { const c = document.createElement('canvas'); c.width = 512; c.height = 96; const x = c.getContext('2d'); x.font = 'bold 56px Georgia'; x.textAlign = 'center'; x.shadowColor = '#ff8a2a'; x.shadowBlur = 18; x.fillStyle = '#ffd08a'; x.fillText(t, 256, 66, 490);
+  const g = new THREE.Group(); mesh(new THREE.PlaneGeometry(w, w * 96 / 512), new THREE.MeshBasicMaterial({ map: ctex(c), transparent: true, fog: false }), 0, 0, 0, g).castShadow = false; return g; }
+function createEmporium() {                                        // brick tower, black/gold smokestacks, copper pipes, gears, glowing windows
+  const g = new THREE.Group(), blk = M(0x2a2a35, { roughness: .5 }), gold = M(0xd9a82a, { roughness: .3 }), cop = M(0xc0803a, { roughness: .35 });
+  mesh(box(9, 16, 6), M(0xb08a70, { roughness: .8 }), 0, 8, 0, g); mesh(box(9.6, .6, 6.6), gold, 0, 16.3, 0, g); mesh(box(7, 6, .4), blk, 0, 3.2, 3.1, g); mesh(box(5.4, 5, .2), GS(0xffd27a, 1.4), 0, 3.0, 3.3, g);
+  const sg = createRoundSign([[`WONKA'S`, 70, 215], ['CHOCOLATE', 62, 290], ['FACTORY', 62, 355]]); sg.position.set(0, 10.6, 3.15); g.add(sg);
+  for (const [x, y, r] of [[-3, 6.5, 1.1], [3, 6.5, .9]]) { const gr = createGear(r, 0xd9a82a); gr.position.set(x, y, 3.2); g.add(gr); }
+  mesh(box(14, 6, 8), blk, -11.5, 3, 1, g); mesh(box(14, 6, 8), blk, 11.5, 3, 1, g);
+  mesh(cyl(3, 3, 3.4, 24), blk, -14, 7.7, 1, g); mesh(new THREE.CircleGeometry(1.7, 24), GS(0xffffff, 1.8), -14, 7.7, 4.02, g); mesh(tor(1.8, .16), gold, -14, 7.7, 4.05, g);          // round porthole window
+  for (const x of [9, 12, 15]) { mesh(cyl(.9, 1, 6, 14), cop, x, 9, 1, g); mesh(sph(.9, 12), cop, x, 12, 1, g).scale.y = .6; mesh(cyl(.12, .12, 1.2, 6), cop, x, 13.1, 1, g); }                  // copper tanks
+  const p1 = mesh(cyl(.45, .45, 14, 10), cop, 11.5, 6.9, -2.6, g); p1.rotation.z = Math.PI / 2; for (let k = 0; k < 5; k++) mesh(tor(.9, .3), cop, -9 + k * 1.3, 6.5 + (k % 2) * .3, -2, g).rotation.y = k;   // pipe + corkscrew pipes
+  mesh(cyl(1.7, 1.9, 16, 16), blk, -2.2, 24, -1, g); mesh(cyl(1.75, 1.75, 5, 16), gold, -2.2, 26, -1, g); mesh(cyl(1.45, 1.6, 12, 16), blk, 2.4, 22, -1, g);
+  for (const y of [18, 23]) mesh(cyl(1.7, 1.7, 1.2, 16), gold, 2.4, y, -1, g); mesh(tor(2, .18), gold, 2.4, 28, -1, g).rotation.x = Math.PI / 2;
+  steam(g, -2.2, 32.5, -1); steam(g, 2.4, 28.5, -1); steam(g, 11.5, 15, 1);
+  for (let k = 0; k < 6; k++) { mesh(box(1.4, 2.2, .1), GS(0xffd27a, 1.3), -17 + k * 2.2, 3.4, 5.05, g); mesh(box(1.4, 2.2, .1), GS(0xffd27a, 1.3), 6 + k * 2.2, 3.4, 5.05, g); }
+  g.userData.feet = [[0, 0, 4.5, 3], [-11.5, 1, 7, 4], [11.5, 1, 7, 4]]; return g; }
+function createLampPost() { const g = new THREE.Group(); mesh(cyl(.06, .1, 3.4, 8), M(0x222230), 0, 1.7, 0, g); mesh(sph(.22, 10), GS(0xffe08a, 1.8), 0, 3.6, 0, g); mesh(cone(.3, .25, 8), M(0x222230), 0, 3.95, 0, g); g.userData.feet = [[0, 0, .12, .12]]; return g; }
+function createCottage(w = 4, h = 3.5, roof = 0xb04a3a, tower = false) {   // cream cottage with conical/pyramid roof
+  const g = new THREE.Group(); mesh(box(w, h, w), M(0xf0e0b8), 0, h / 2, 0, g); mesh(box(w + .1, .3, w + .1), M(0x8a7a60), 0, .15, 0, g);
+  const r = mesh(cone(w * .85, h * .7, 4), M(roof), 0, h + h * .35, 0, g); r.rotation.y = Math.PI / 4;
+  mesh(box(.7, 1, .1), GS(0xffd27a, 1.4), w * .2, h * .55, w / 2 + .05, g); mesh(box(.6, 1, .1), M(0x6a4a2a), -w * .2, .6, w / 2 + .05, g);
+  if (tower) { mesh(cyl(w * .32, w * .36, h * 1.6, 12), M(0xf0e0b8), w * .5, h * .8, w * .5, g); mesh(cone(w * .45, h * .9, 12), M(roof), w * .5, h * 1.6 + h * .45, w * .5, g); }
+  g.userData.feet = [[0, 0, w / 2, w / 2]]; return g; }
+function createStoneBridge() {                                     // flat stone bridge with parapet blocks and arch portals
+  const g = new THREE.Group(), st = M(0xc8b08a, { roughness: .9 }), st2 = M(0xb89a74, { roughness: .9 });
+  mesh(box(3.4, .2, 7.6), st, 0, .1, 0, g); for (const sx of [-1.75, 1.75]) for (let k = 0; k < 8; k++) mesh(box(.5, .55, .85), k % 2 ? st : st2, sx, .45, -3.3 + k * .95, g);
+  for (const z of [-3.8, 3.8]) { mesh(tor(1.9, .28, Math.PI), st2, 0, .2, z, g).scale.y = 1.2; mesh(box(.6, .5, .6), st, 0, 2.55, z, g); }
+  g.userData.feet = [[-1.75, 0, .3, 3.8], [1.75, 0, .3, 3.8]]; return g; }
+function createStoneArch(w = 6, h = 5) { const g = new THREE.Group(), st = M(0xb89a74, { roughness: .9 }); for (const sd of [-1, 1]) mesh(box(.9, h, .9), st, sd * w / 2, h / 2, 0, g); mesh(tor(w / 2, .45, Math.PI), st, 0, h, 0, g); return g; }
+function createShell(c = 0xfff0c0) { const g = new THREE.Group(), sh = mesh(geo('shell', () => new THREE.SphereGeometry(.7, 12, 8, 0, 6.2832, 0, 1.57)), M(c, { roughness: .3, side: THREE.DoubleSide }), 0, .7, 0, g); sh.rotation.x = Math.PI; return g; }
+const swTex = {};
+function swirlTex(c1, c2) { const k = c1 + c2; if (swTex[k]) return swTex[k]; const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = c2; x.fillRect(0, 0, 256, 256); x.lineWidth = 4;
+  for (let r = 124; r > 2; r -= 3) for (let j = 0; j < 12; j++) { x.strokeStyle = j % 2 ? c1 : c2; x.beginPath(); x.arc(128, 128, r, r * .05 + j * .5236, r * .05 + (j + 1) * .5236); x.stroke(); } return swTex[k] = ctex(c); }
+function createSwirlDisc(r = 2, c1 = '#d8283c', c2 = '#fff2f2') {   // big swirl lollipop disc for walls
+  const g = new THREE.Group(), t = swirlTex(c1, c2); mesh(new THREE.CircleGeometry(r, 32), new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: .25, roughness: .4 }), 0, 0, 0, g).castShadow = false;
+  mesh(tor(r, r * .06), M(0xc9a040, { roughness: .3 }), 0, 0, .02, g); return g; }
+function createJar(col = 0xff5fa2, dots = 0xffffff) {              // giant glass candy jar on a brass stand
+  const g = new THREE.Group(), br = M(0xc9a040, { roughness: .3 }); mesh(cyl(.55, .75, .25, 16), br, 0, .12, 0, g); mesh(cyl(.12, .15, .7, 8), br, 0, .6, 0, g); mesh(cyl(.9, .9, .12, 20), br, 0, 1, 0, g);
+  mesh(cyl(.88, .88, 1.9, 20), GLASS, 0, 2, 0, g); mesh(cyl(.8, .8, 1.5, 20), M(col, { roughness: .4 }), 0, 1.8, 0, g);
+  for (let k = 0; k < 8; k++) mesh(sph(.09, 6), M(dots), Math.cos(k * 2.2) * .5, 1.2 + (k % 4) * .3, Math.sin(k * 2.2) * .5 + .3, g);
+  mesh(sph(.6, 12), br, 0, 3, 0, g).scale.y = .5; mesh(sph(.12, 8), br, 0, 3.35, 0, g); const sw = createSwirlDisc(.28); sw.position.set(0, 1.7, .9); g.add(sw); return g; }
+function createCandyTable() {                                      // round white marble table with a pink base and brass rim
+  const g = new THREE.Group(); mesh(cyl(4.2, 3.6, 1.1, 32), M(0xff8fcf, { roughness: .4 }), 0, .55, 0, g); mesh(cyl(4.6, 4.6, .25, 32), M(0xfff8f0, { roughness: .15 }), 0, 1.2, 0, g); mesh(tor(4.6, .12), M(0xc9a040, { roughness: .3 }), 0, 1.2, 0, g).rotation.x = Math.PI / 2;
+  for (let k = 0; k < 24; k++) mesh(sph(.06, 5), M(PAL[k % 5]), Math.cos(k * 2.4) * (1 + k * .13), 1.36, Math.sin(k * 2.4) * (1 + k * .13), g); g.userData.feet = [[0, 0, 4.6, 4.6]]; return g; }
+function createWhiteStation() {                                    // glossy white nut-sorting station: tube arms, basket, chute
+  const g = new THREE.Group(), w = M(0xf4faff, { roughness: .25 }); mesh(box(2.6, .9, 1.4), w, 0, .45, 0, g); mesh(box(2.7, .1, 1.5), M(0x5aa8e0, { roughness: .3 }), 0, .95, 0, g);
+  for (let k = 0; k < 6; k++) mesh(cyl(.04, .04, .5, 6), w, -.9 + k * .36, .75, .75, g); mesh(sph(.5, 12), w, 1.9, .5, 0, g).scale.y = .5;
+  mesh(cyl(.5, .5, .1, 12), M(0x111111), -1.9, .06, 0, g); mesh(cone(.7, .5), M(0xdde8f0), -1.9, .35, 0, g).scale.y = .5;
+  g.userData.nut = mesh(sph(.14, 8), M(0x5a3a1a), 0, 1, 0, g); g.userData.feet = [[0, 0, 1.3, .7]]; return g; }
+function createBigSquirrel() {                                     // upright squirrel holding a nut: round body, cream belly, big eyes, ears, fluffy S-curved tail
+  const g = new THREE.Group(), fur = M(0x9a7a5a, { roughness: .9 }), dark = M(0x6b5238, { roughness: .9 }), cream = M(0xf2e6d0, { roughness: .9 });
+  mesh(sph(.42, 14), fur, 0, .7, 0, g).scale.set(1, 1.3, .95); mesh(sph(.3, 12), cream, 0, .62, -.22, g).scale.set(.85, 1.2, .5);
+  for (const sd of [-1, 1]) { mesh(sph(.16, 10), fur, .26 * sd, .12, -.2, g).scale.set(.8, .55, 1.5);
+    const a = new THREE.Group(); a.position.set(.3 * sd, 1, -.1); a.rotation.x = 1.2; g.add(a); mesh(cyl(.06, .06, .4, 8), fur, 0, -.2, 0, a); mesh(sph(.075, 8), dark, 0, -.42, 0, a); }
+  mesh(sph(.1, 8), M(0x5a3a1a), 0, .86, -.42, g);
+  const h = new THREE.Group(); h.position.set(0, 1.5, -.12); g.add(h); mesh(sph(.3, 14), fur, 0, 0, 0, h).scale.set(1.05, 1, 1.05);
+  mesh(sph(.14, 10), cream, 0, -.06, -.27, h).scale.set(1, .8, 1.1); mesh(sph(.04, 8), M(0x4a2a2a), 0, -.02, -.4, h); mesh(box(.05, .07, .02), M(0xffffff), 0, -.13, -.34, h);
+  for (const sd of [-1, 1]) { mesh(sph(.065, 8), M(0x111111), .13 * sd, .07, -.24, h); mesh(sph(.022, 6), M(0xffffff), .14 * sd, .09, -.29, h); mesh(sph(.09, 8), cream, .13 * sd, -.1, -.2, h);
+    const e = mesh(cone(.1, .26, 8), fur, .17 * sd, .3, 0, h); e.rotation.z = -sd * .2; }
+  for (let j = 0; j < 6; j++) mesh(sph(.15 + .035 * j, 10), j > 4 ? cream : fur, 0, .35 + j * .27, .38 + .32 * Math.sin(j * .55), g);
+  squirrels.push({ h, p: Math.random() * 6 }); g.userData.feet = [[0, 0, .45, .45]]; return g; }
+function createShelf(w = 4) {                                      // wall shelf unit with candy jars on three tiers
+  const g = new THREE.Group(), wd = M(0x8a5a30, { roughness: .8 }), br = M(0xc9a040, { roughness: .3 });
+  for (const sx of [-w / 2, w / 2]) mesh(box(.15, 5.2, .9), wd, sx, 2.6, 0, g);
+  for (let k = 0; k < 4; k++) mesh(box(w, .12, .9), wd, 0, .3 + k * 1.5, 0, g);
+  for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) { const x = -w / 2 + .55 + j * (w - 1.1) / 3, y = .71 + k * 1.5;
+    mesh(cyl(.28, .28, .7, 10), GLASS, x, y, 0, g).castShadow = false; mesh(cyl(.22, .22, .55, 10), M(PAL[(j + k) % 5], { roughness: .3 }), x, y - .05, 0, g); mesh(sph(.1, 8), br, x, y + .42, 0, g); }
+  g.userData.feet = [[0, 0, w / 2, .45]]; return g; }
+const tvScr = (() => { const cv = document.createElement('canvas'); cv.width = 320; cv.height = 240; return { cv, cx: cv.getContext('2d'), tex: ctex(cv) }; })();
+function drawTV(mode) {                                            // what the TV screen shows: idle logo, static while the chocolate travels, or the chocolate bar
+  const c = tvScr.cx;
+  if (mode === 'static') { for (let y = 0; y < 240; y += 8) for (let x = 0; x < 320; x += 8) { const v = Math.random() * 255 | 0; c.fillStyle = `rgb(${v},${v},${v})`; c.fillRect(x, y, 8, 8); } }
+  else { const g = c.createLinearGradient(0, 0, 0, 240); g.addColorStop(0, mode === 'bar' ? '#3a2a50' : '#17424d'); g.addColorStop(1, mode === 'bar' ? '#120a20' : '#0a1c24'); c.fillStyle = g; c.fillRect(0, 0, 320, 240);
+    if (mode === 'bar') { c.fillStyle = '#5a2d14'; rr(c, 50, 60, 220, 120, 10); c.fill(); c.strokeStyle = '#2e1408'; c.lineWidth = 4; for (let k = 1; k < 4; k++) { c.beginPath(); c.moveTo(50 + k * 55, 60); c.lineTo(50 + k * 55, 180); c.stroke(); } c.beginPath(); c.moveTo(50, 120); c.lineTo(270, 120); c.stroke();
+      c.fillStyle = '#e8344e'; c.fillRect(30, 100, 260, 40); c.fillStyle = '#ffd24a'; c.font = 'bold 30px Georgia'; c.textAlign = 'center'; c.fillText('WONKA', 160, 130); }
+    else { c.fillStyle = '#ffd08a'; c.font = 'bold 36px Georgia'; c.textAlign = 'center'; c.shadowColor = '#ff8a2a'; c.shadowBlur = 16; c.fillText('WONKAVISION', 160, 125); c.shadowBlur = 0; c.font = '16px Georgia'; c.fillStyle = '#9ad8e8'; c.fillText('chocolate by television', 160, 155); }
+    c.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < 240; y += 4) c.fillRect(0, y, 320, 2); }
+  tvScr.tex.needsUpdate = true; }
+drawTV('idle');
+function createBigTV() {                                           // a proper television: white body, black bezel, glowing screen, knobs, antenna, stand
+  const o = new THREE.Group(), body = M(0xf4f6fa, { roughness: .3 }), blk = M(0x15151c, { roughness: .4 }), met = M(0x888899, { metalness: .6 });
+  mesh(box(2.4, .3, 1.6), body, 0, .15, 0, o); mesh(cyl(.35, .5, 1.2, 12), body, 0, .9, 0, o); mesh(box(5.8, 4.6, 1.8), body, 0, 3.8, 0, o); mesh(box(5, 3.8, .12), blk, 0, 3.95, .93, o);
+  mesh(new THREE.PlaneGeometry(4.6, 3.45), new THREE.MeshBasicMaterial({ map: tvScr.tex, toneMapped: false }), 0, 3.95, 1.0, o).castShadow = false;
+  for (let k = 0; k < 3; k++) mesh(cyl(.14, .14, .14, 10), met, 1.7 + k * .45, 1.8, .95, o).rotation.x = Math.PI / 2;
+  mesh(box(1.2, .12, .05), blk, -1.7, 1.8, .92, o); mesh(sph(.2, 8), met, 0, 6.15, 0, o);
+  for (const sd of [-1, 1]) mesh(cyl(.03, .03, 2.2, 6), met, sd * .75, 7.1, 0, o).rotation.z = -sd * .5;
+  o.userData.feet = [[0, 0, 2.9, .9]]; return o; }
+function makeChocoBar() { const b = new THREE.Group(); mesh(box(1.4, .25, .8), M(0x5a2d14, { roughness: .3 }), 0, 0, 0, b); for (let k = 0; k < 3; k++) mesh(box(.4, .05, .3), M(0x7a4a24), -.4 + k * .4, .15, 0, b); mesh(box(.3, .27, .82), M(0xe8344e), .55, 0, 0, b); return b; }
+function createCupHopper() {                                       // white cup hopper over a clear tube of nuts
+  const g = new THREE.Group(), w = M(0xf4faff, { roughness: .25 }); mesh(cyl(.5, .8, .5, 12), w, 0, .25, 0, g); mesh(cyl(.55, .55, 2.6, 12), GLASS, 0, 1.8, 0, g); mesh(cyl(.45, .45, 2.2, 12), M(0x6b4a2a, { roughness: .8 }), 0, 1.7, 0, g);
+  mesh(cone(.3, .5, 8), w, 0, 3.4, 0, g).rotation.x = Math.PI; mesh(cone(1.1, 1.3, 14), w, 0, 4.5, 0, g).rotation.x = Math.PI; mesh(tor(1.1, .12), w, 0, 5.15, 0, g).rotation.x = Math.PI / 2; mesh(tor(.5, .1, 4.5), w, 1.2, 4.7, 0, g);
+  g.userData.feet = [[0, 0, .7, .7]]; return g; }
+function createStairs(n = 9) {                                     // blue staircase up to a landing (decor: you cannot climb it)
+  const g = new THREE.Group(); for (let k = 0; k < n; k++) mesh(box(3, .7 * (k + 1), .9), M(k % 2 ? 0x4a8ad0 : 0x6aa8e8, { roughness: .3 }), 0, .35 * (k + 1), -k * .9, g);
+  mesh(box(5, .4, 3), M(0xf4faff), 0, n * .7 - .2, -n * .9 - .6, g); g.userData.feet = [[0, -4.2, 1.6, 4.7]]; return g; }
+function createSphereTV() {                                        // white sphere TV pod on a pedestal with a glowing window
+  const o = new THREE.Group(), w = M(0xffffff, { roughness: .15 }); mesh(cyl(.9, 1.5, 1.2, 20), w, 0, .6, 0, o); mesh(sph(2, 24), w, 0, 3.2, 0, o);
+  o.userData.screen = mesh(new THREE.CircleGeometry(1.15, 24), G(0x66ccff, 1), 0, 3.2, 1.93, o); mesh(tor(1.2, .1), w, 0, 3.2, 1.9, o); o.userData.feet = [[0, 0, 1.6, 1.6]]; return o; }
+function createWhitePipe(len = 40) { const g = new THREE.Group(), m = mesh(cyl(.45, .45, len, 10), M(0xf2f8ff, { roughness: .25 }), 0, 9, 0, g); m.rotation.z = Math.PI / 2; return g; }
+
+// ===== A. FACTORY ENTRANCE (reference: emporium with smokestacks at dusk) =====
+newRoom('A', 0, { w: 60, d: 60, outdoor: true, floor: 0x5a5a72 });
+place(createEmporium, 0, -14); mesh(box(5, .04, 26), M(0x8a88a0), 0, .02, 1, B.g).castShadow = false;
+for (const x of [-14, 14]) mesh(box(14, .05, 30), M(0x2f6a3a), x, .03, 6, B.g).castShadow = false;
+for (let k = 0; k < 2; k++) mesh(box(6.5 - k * .6, .1 + k * .08, 1.1), M(0xa09cb4), 0, .05 + k * .04, -8.5 - k * .5, B.g);
+{ const bars = new THREE.InstancedMesh(cyl(.05, .05, 3.4, 6), M(0x222230), 80);   // iron gate fence, one draw call
+  for (let i = 0; i < 80; i++) { dm2.position.set(i < 40 ? -22 + i * .45 : 4.5 + (i - 40) * .45, 1.7, 14); dm2.rotation.set(0, 0, 0); dm2.scale.set(1, 1, 1); dm2.updateMatrix(); bars.setMatrixAt(i, dm2.matrix); } B.g.add(bars);
+  for (const y of [.5, 3.2]) { mesh(box(17.5, .12, .12), M(0x222230), -13.25, y, 14, B.g); mesh(box(17.5, .12, .12), M(0x222230), 13.25, y, 14, B.g); } addSolid(-13.25, 14, 9, .3); addSolid(13.25, 14, 9, .3);
+  for (const x of [-4, 4]) { mesh(box(.6, 4.4, .6), M(0x222230), x, 2.2, 14, B.g); mesh(sph(.35, 10), M(0xd9a82a), x, 4.7, 14, B.g); mesh(sph(.2, 8), GS(0xffe08a, 1.8), x, 5.3, 14, B.g); }
+  mesh(tor(4, .15, Math.PI), M(0x222230), 0, 4.4, 14, B.g); const gt = createGlowText(`WONKA'S CHOCOLATE FACTORY`, 7.5); gt.position.set(0, 5.4, 14.1); B.g.add(gt); }
+[[-3.4, 9], [3.4, 9], [-3.4, 1], [3.4, 1], [-3.4, -6], [3.4, -6], [-12, 8], [12, 8]].forEach(([x, z]) => place(createLampPost, x, z));
+for (let i = 0; i < 10; i++) for (const sd of [-1, 1]) mesh(sph(1.1, 10), M(0x2a6a3a), sd * (6.5 + (i % 2) * .5), .8, 11 - i * 1.7, B.g).scale.y = .8;     // hedges beside the path
+{ const hills = [0x4a4a8a, 0x5a4a8a, 0x3a3a7a]; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283, h = mesh(sph(1, 12), M(hills[i % 3], { roughness: .9 }), Math.cos(a) * 58, -2, Math.sin(a) * 58, B.g); h.scale.set(18, 9, 14); h.castShadow = false; hillsA.push(h); }
+  const tr = new THREE.InstancedMesh(cone(1.6, 5, 6), M(0x1e4a3a), 40); for (let i = 0; i < 40; i++) { const a = i * 2.4, r = 36 + (i % 5) * 4; dm2.position.set(Math.cos(a) * r, 2.5, Math.sin(a) * r); dm2.scale.set(1, .8 + (i % 3) * .3, 1); dm2.rotation.set(0, 0, 0); dm2.updateMatrix(); tr.setMatrixAt(i, dm2.matrix); } B.g.add(tr); }
+addDoor(0, -10.2, 1);
+
+// ===== CANDY + GRASS FACTORIES =====
+function grassPlane(w, d) {                                        // rolling grass: one plane with per-vertex colour variation (light/dark patches)
+  const gm = new THREE.PlaneGeometry(w, d, 64, 64); gm.rotateX(-Math.PI / 2); const pa = gm.attributes.position, col = new Float32Array(pa.count * 3), a = new THREE.Color(0x3a9a2c), b = new THREE.Color(0x86d84e), c = new THREE.Color();
+  for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), n = .5 + .25 * Math.sin(x * .18 + Math.sin(z * .13) * 2) + .15 * Math.sin(z * .31 + x * .07) + .1 * Math.sin((x + z) * .7); c.lerpColors(a, b, clamp(n, 0, 1)); col.set([c.r, c.g, c.b], i * 3); }
+  gm.setAttribute('color', new THREE.BufferAttribute(col, 3)); const m = new THREE.Mesh(gm, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); m.position.y = .005; m.receiveShadow = true; return m; }
+function createTwistTree(i = 0, h = 8) {                           // twisted striped candy tree: stacked half-cylinders, each turned a little
+  const g = new THREE.Group(), cols = [[0x4cd964, 0xffe45e], [0xb18cff, 0xffe45e], [0xff8fcf, 0xffffff], [0x3ed1c5, 0xffe45e]][i % 4], n = 6, lh = h / n;
+  for (let k = 0; k < n; k++) { const r0 = .7 * (1 - k / n) + .12, r1 = .7 * (1 - (k + 1) / n) + .12, gm = geo(`tw${r0},${r1},${lh}`, () => new THREE.CylinderGeometry(r1, r0, lh, 12, 1, false, 0, Math.PI));
+    for (let j = 0; j < 2; j++) { const m = mesh(gm, M(cols[j], { roughness: .35, side: THREE.DoubleSide }), 0, lh * (k + .5), 0, g); m.rotation.y = j * Math.PI + k * .6; } }
+  mesh(sph(.22, 8), M(0xff5fa2, { roughness: .3 }), 0, h + .1, 0, g); g.userData.feet = [[0, 0, .55, .55]]; return g; }
+const POPC = [['#ff3a7a', '#fff0f6'], ['#1fb6e8', '#e8faff'], ['#ffc400', '#fff7d0'], ['#7a3fe8', '#f2eaff'], ['#2fc96a', '#effff4']];
+function createPop(i = 0, h = 5) {                                 // swirl lollipop: striped stick + double-sided swirl disc with a white rim
+  const g = new THREE.Group(), r = h * .3, t = swirlTex(...POPC[i % 5]); mesh(cyl(.09, .09, h, 8), M(i % 2 ? 0xffffff : 0xff9cc8, { roughness: .3 }), 0, h / 2, 0, g);
+  for (const sd of [0, Math.PI]) { const d = mesh(new THREE.CircleGeometry(r, 36), new THREE.MeshStandardMaterial({ map: t, roughness: .25 }), 0, h + r * .7, sd ? -.04 : .04, g); d.rotation.y = sd; d.castShadow = false; }
+  mesh(tor(r, r * .09), M(0xffffff, { roughness: .2 }), 0, h + r * .7, 0, g); g.userData.feet = [[0, 0, .25, .25]]; return g; }
+function createPopBall(i = 0, h = 4.5) {                           // round lollipop: glossy ball with sprinkles (some chocolate-dipped)
+  const g = new THREE.Group(), r = h * .27, col = [0x3ac7e6, 0x6b3a22, 0xffd84a, 0xff6fa8][i % 4]; mesh(cyl(.09, .09, h, 8), M(0xffffff), 0, h / 2, 0, g); mesh(sph(r, 18), M(col, { roughness: .25 }), 0, h + r * .6, 0, g);
+  if (i % 4 === 1) mesh(geo('cap' + r, () => new THREE.SphereGeometry(r * 1.03, 18, 8, 0, 6.2832, 0, 1.15)), M(0x4a2511, { roughness: .2 }), 0, h + r * .6, 0, g);
+  for (let k = 0; k < 16; k++) { const a = k * 2.399, y = 1 - (k + .5) / 8, rr = Math.sqrt(Math.max(0, 1 - y * y)); mesh(sph(r * .07, 5), M(PAL[k % 5], { roughness: .3 }), Math.cos(a) * rr * r * 1.03, h + r * .6 + y * r * 1.03, Math.sin(a) * rr * r * 1.03, g); }
+  g.userData.feet = [[0, 0, .25, .25]]; return g; }
+function createCane(h = 5) {                                       // candy cane: 8 stripes + hooked top made of alternating arc pieces
+  const g = new THREE.Group(), R = h * .16; for (let k = 0; k < 8; k++) mesh(cyl(.15, .15, h / 8, 10), M(k % 2 ? 0xffffff : 0xe8344e, { roughness: .3 }), 0, h / 16 + k * h / 8, 0, g);
+  const hk = new THREE.Group(); hk.position.set(R, h, 0); g.add(hk); for (let k = 0; k < 6; k++) mesh(tor(R, .15, Math.PI / 6), M(k % 2 ? 0xffffff : 0xe8344e, { roughness: .3 }), 0, 0, 0, hk).rotation.z = k * Math.PI / 6;
+  g.userData.feet = [[0, 0, .22, .22]]; return g; }
+function createGumdrop(i = 0, s = 1) {                             // gumdrop mound with sugar crystals (low enough to jump over)
+  const g = new THREE.Group(), c = PAL[i % 5]; mesh(geo('gd', () => new THREE.SphereGeometry(1, 16, 10, 0, 6.2832, 0, 1.5708)), M(c, { roughness: .25 }), 0, 0, 0, g).scale.set(1.1 * s, .85 * s, 1.1 * s);
+  for (let k = 0; k < 10; k++) { const a = k * 2.4, e = .25 + (k % 5) * .13, rr = Math.cos(e); mesh(sph(.05 * s, 4), M(0xffffff, { emissive: 0x888888 }), Math.cos(a) * rr * 1.1 * s, Math.sin(e) * .85 * s, Math.sin(a) * rr * 1.1 * s, g); }
+  g.userData.feet = [[0, 0, .95 * s, .95 * s, .8 * s]]; return g; }
+const deco = (make, x, z, s = 1, ...a) => { const g = make(...a); g.position.set(x, 0, z); g.scale.setScalar(s); B.g.add(g); g.traverse(o => o.castShadow = false); return g; };   // scenery: no collision, no shadow
+const MALLC = [0xffc0d9, 0xfff3b0, 0xc9f5dc, 0xd8c8ff, 0xffe0c8];
+
+// ===== B. CHOCOLATE ROOM / GARDEN (reference: green grassland, stone bridge, cottages, golden sunset; no waterfall, no characters) =====
+newRoom('B', 100, { floor: 0x4db33d, outdoor: true }); B.g.add(grassPlane(B.w + 40, B.d + 40));
+place(createChocolateRiver, 0, -6); addSolid(-12, -6, 10, 3.2); addSolid(4.5, -6, 2.5, 3.2); addSolid(16.5, -6, 5.5, 3.2); addSolid(9, -6.75, 2, 2.45); place(createStoneBridge, 0, -6);
+// boat dock: a path from the main walkway to a wooden pier, with the boat moored at its end
+mesh(box(9.4, .04, 2.4), M(0xc8b08a, { roughness: .9 }), 4.7, .02, -1.6, B.g).castShadow = false; mesh(box(3.6, .18, 2.2), M(0x9a6a3a, { roughness: .8 }), 9, .1, -3.4, B.g);
+for (const [x, z] of [[7.3, -4.4], [10.7, -4.4], [7.3, -2.5], [10.7, -2.5]]) mesh(cyl(.12, .12, 1, 8), M(0x6a4a2a), x, .5, z, B.g);
+{ const sg = place(createRoomSign, 5.5, .6, 0, .45, 'BOAT DOCK  →'); sg.position.y = 2.7; mesh(cyl(.07, .07, 2.7, 6), M(0x6a4a2a), 5.5, 1.35, .6, B.g); }
+mesh(box(3, .04, 20), M(0xc8b08a, { roughness: .9 }), 0, .02, 8, B.g).castShadow = false; mesh(box(3, .04, 11), M(0xc8b08a, { roughness: .9 }), 0, .02, -15, B.g).castShadow = false;
+for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, h = mesh(sph(1, 14), M([0x5fc040, 0x4aa832, 0x72d04a][i % 3], { roughness: 1 }), Math.cos(a) * 38, -1, Math.sin(a) * 36, B.g); h.scale.set(12 + i % 3 * 3, 6 + i % 4 * 2, 12); h.castShadow = false; }   // rolling grassy hills
+{ const hm = new THREE.InstancedMesh(cyl(.3, .3, .5, 10), M(0xffffff, { roughness: .6 }), 100), pz = [], pa = []; let n = 0;       // marshmallow edging along both paths
+  for (const [z0, z1] of [[18.5, -2.4], [-9.6, -19.2]]) for (let z = z0; z > z1; z -= .85) for (const sd of [-1.95, 1.95]) { dm2.position.set(sd, .25, z); dm2.rotation.set(0, n, 0); dm2.scale.set(1, 1, 1); dm2.updateMatrix(); hm.setMatrixAt(n, dm2.matrix); hm.setColorAt(n, new THREE.Color(MALLC[n % 5])); n++; }
+  hm.count = n; hm.receiveShadow = true; B.g.add(hm);
+  const pr = new THREE.InstancedMesh(cyl(.5, .5, .05, 16), M(0xe8344e, { roughness: .4 }), 40), pw = new THREE.InstancedMesh(geo('pepw', () => { const q = new THREE.TorusGeometry(.28, .07, 6, 14); q.rotateX(Math.PI / 2); return q; }), M(0xffffff), 40);   // peppermints
+  for (let i = 0; i < 40;) { const x = (Math.random() - .5) * 42, z = (Math.random() - .5) * 38; if (Math.abs(z + 6) < 4.5 || Math.abs(x) < 2.4) continue; dm2.position.set(x, .04, z); dm2.rotation.set(0, 0, 0); dm2.scale.set(1, 1, 1); dm2.updateMatrix(); pr.setMatrixAt(i, dm2.matrix); pw.setMatrixAt(i, dm2.matrix); i++; } B.g.add(pr, pw); }
+// cottage village + stone wall + lamps on the far bank
+[[7, -16.5, 4, 3.5, 0xb04a3a, true, .2], [13, -17, 4.5, 4, 0x4a6aa0, false, -.15], [17.5, -14, 4, 3.5, 0xb04a3a, true, .3], [9.5, -12.5, 3.2, 3, 0x4a6aa0, false, 0]].forEach(([x, z, w, h, c, t, r]) => place(createCottage, x, z, r, 1, w, h, c, t));
+for (let k = 0; k < 8; k++) mesh(box(2.4, .9, .5), M(k % 2 ? 0x9a9a9a : 0xaaa49a, { roughness: .9 }), 1 + k * 2.55, .45, -20.2, B.g);
+[[-3.4, 12], [3.4, 12], [-3.4, 4], [3.4, 4], [3.4, -12], [-3.4, -12], [19, -9.5], [5, -9.6]].forEach(([x, z]) => place(createLampPost, x, z));
+{ const sg = place(createRoomSign, 0, -19, 0, .8, 'THE CHOCOLATE ROOM'); sg.position.y = 6.5; for (const x of [-3.4, 3.4]) mesh(cyl(.15, .15, 6.5, 8), M(0x6a4a2a), x, 3.25, -19, B.g); }
+// candy meadow (book: everything is edible): twisted trees, swirl lollipops, round pops, candy canes, gumdrops, mushrooms
+[[-18, 15, 0, 8], [-11, 8, 1, 7], [18, 15, 2, 8], [12, 7, 3, 7], [-19, 1, 2, 6], [-18, -15, 3, 10], [-12, -13, 0, 8], [-7, -17, 1, 9]].forEach(([x, z, k, h]) => place(createTwistTree, x, z, 0, 1, k, h));
+[[-7, 17, .2], [7, 17.5, -.2], [-15, 12, .4], [15, 12, -.4], [-21, 8, .6], [21, 3, -.6], [-20, -11, .3], [20, -17.5, -.3]].forEach(([x, z, r], k) => place(createPop, x, z, r, 1, k, 5 + k % 3));
+[[-14, 5], [14, 9], [-5, 12], [6, 13], [-15, -17.5], [-9, -11]].forEach(([x, z], k) => place(createPopBall, x, z, 0, 1, k, 4.5));
+[[-21, 14], [21, 12], [-8, 2], [9, 1], [-21, -15]].forEach(([x, z]) => place(createCane, x, z, 0, 1, 5));
+[[-12, 14, 1.3], [-17, 9, 1], [12, 16, 1.2], [17, 6, 1], [-4, 15, .9], [5, 8, .9], [-15, -11, 1.2], [-9, -11.5, 1], [-20, -18, 1.2], [4, 17, .8]].forEach(([x, z, sc], k) => place(createGumdrop, x, z, 0, 1, k, sc));
+[[-16, 2], [16, 2], [-9, 18], [10, 18.5]].forEach(([x, z], k) => place(createMushroom, x, z, 0, 1.3, k));
+for (let i = 0; i < 24; i++) { const f = place(createEdibleFlower, -19 + (i * 7.3) % 38, 1 + (i * 3.7) % 16, 0, 1.3 + (i % 3) * .4, i);
+  if (i < 4) addItem(f, 'Edible flower', 'Everything in this meadow is made to be eaten, even the grass.', { lift: true, range: 2.8, tag: 'edible' }); }
+{ const dz = new THREE.InstancedMesh(sph(.14, 6), M(0xffffff), 220), tf = new THREE.InstancedMesh(cone(.1, .55, 5), M(0xffffff, { roughness: 1 }), 700), cols = [0xff3a3a, 0xffd23a, 0xffffff, 0xff8fcf], gr = [0x2f8a28, 0x3fa534, 0x5cc040];   // daisies + dense grass tufts, one draw call each
+  let n = 0, m = 0; while (n < 220 || m < 700) { const x = (Math.random() - .5) * 43, z = (Math.random() - .5) * 39; if (Math.abs(z + 6) < 4.3 || Math.abs(x) < 2.3) continue;
+    if (n < 220 && Math.random() < .3) { dm2.position.set(x, .16, z); dm2.scale.set(1, 1, 1); dm2.updateMatrix(); dz.setMatrixAt(n, dm2.matrix); dz.setColorAt(n, new THREE.Color(cols[n % 4])); n++; }
+    else if (m < 700) { dm2.position.set(x, .27, z); dm2.scale.set(1, .6 + Math.random() * .9, 1); dm2.updateMatrix(); tf.setMatrixAt(m, dm2.matrix); tf.setColorAt(m, new THREE.Color(gr[m % 3])); m++; } }
+  B.g.add(dz, tf); }
+{ const hid = mesh(sph(.35, 12), G(0xff5fa2, 1.6), 19.5, .4, -19, B.g); addItem(hid, 'Hidden candy detail', 'A glowing gumdrop tucked behind the far-bank cottages. Not everyone spots it!', { lift: true, range: 3, tag: 'edible' }); }
+const boatB = place(createBoat, 9, -5.6); addItem(boatB, `Wonka's pink boat`, 'Press E to climb aboard and sail down the chocolate river.', { range: 5, use: () => beginBoat() });
+{ const a = mesh(cone(.5, 1, 4), G(0xffcf6b, 2), 9, 4, -5.6, B.g); a.rotation.x = Math.PI; arrows.push(a); }
+place(createStoneArch, 21.2, -6.5, Math.PI / 2, 1, 6, 5); mesh(box(.2, 4.8, 5.8), M(0x050308), 21.8, 2.4, -6.5, B.g);
+const spark = (() => { const n = 150, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) pos.set([(Math.random() - .5) * 60, 4 + Math.random() * 22, (Math.random() - .5) * 60], i * 3);
+  const gm = new THREE.BufferGeometry(); gm.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const pt = new THREE.Points(gm, new THREE.PointsMaterial({ color: 0xffffff, size: .5, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pt.frustumCulled = false; B.g.add(pt); return pt; })();
+
+// ===== C. DARK TUNNEL (ride only) =====
+newRoom('C', 200, { w: 12, d: 80, outdoor: true, floor: 0x000000 });
+const tube = mesh(new THREE.CylinderGeometry(4, 4, 80, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0x1c1222, side: THREE.BackSide }), 0, 2, 0, B.g); tube.rotation.x = Math.PI / 2; tube.castShadow = false;
+for (let i = 0; i < 16; i++) { const r = mesh(tor(3.8, .1), G(0xff7a30, .8), 0, 2, -37 + i * 5, B.g); r.castShadow = false; r.userData.p = i; rings.push(r); }
+for (const [x, y] of [[-3.3, 3.4], [3.3, 3.4], [-3.6, .9], [3.6, .9]]) { const pp = mesh(cyl(.25, .25, 80, 8), M(0x5a4a55), x, y, 0, B.g); pp.rotation.x = Math.PI / 2; pp.castShadow = false; }   // pipes along the walls
+for (let i = 0; i < 8; i++) { const sd = i % 2 ? 1 : -1; mesh(box(.15, 1.8, 2.6), G(PAL[i % 5], 1.4), sd * 3.85, 2.3, -30 + i * 8.5, B.g).castShadow = false; }              // glimpses of lit factory spaces
+for (let i = 0; i < 4; i++) steam(B.g, (i % 2 ? 1 : -1) * 3, 1, -25 + i * 16);
+const rv = mesh(new THREE.PlaneGeometry(6, 80), M(0x4a2511, { roughness: .1, emissive: 0x2a1005 }), 0, .02, 0, B.g); rv.rotation.x = -Math.PI / 2;
+const rideBoat = createBoat(); B.g.add(rideBoat); rideBoat.position.set(0, .03, 36); rideBoat.rotation.y = Math.PI / 2;
+
+// ===== D. INVENTING ROOM (warm brass workshop; clear central aisle from the entrance to the far door) =====
+newRoom('D', 300, { floor: 0xefe3d2, wall: 0xc9a090, ceil: 0x4a3030 });
+[[-1, 10, 7, 2.2], [-1, 2, 5, 1.5], [-1, -6, 8, 2.8], [-1, -14, 5, 1.8], [1, 10, 5, 1.6], [1, 2, 8, 2.6], [1, -14, 7, 2]].forEach(([sd, z, y, r], k) => { const d = place(createSwirlDisc, sd * 21.65, z, -sd * Math.PI / 2, 1, r, k % 2 ? '#2fb86a' : '#d8283c'); d.position.y = y; });
+for (const x of [-12.5, 12.5]) { const d = place(createSwirlDisc, x, -19.65, 0, 1, 2.2, '#d8283c'); d.position.y = 6; }
+mesh(box(.2, 5, 4.4), GS(0xfff0c0, 1.2), 21.7, 5, -7, B.g).castShadow = false; { const ar = mesh(tor(2.2, .22, Math.PI), M(0xc9a040, { roughness: .3 }), 21.6, 7.5, -7, B.g); ar.rotation.y = Math.PI / 2; }
+{ const n = 40, bulbs = new THREE.InstancedMesh(sph(.14, 6), GS(0xffe9a0, 2), n * 3); let i = 0;
+  for (const z of [-12, 0, 12]) for (let k = 0; k < n; k++) { const u = k / (n - 1); dm2.position.set(-21 + u * 42, 14.8 - 1.6 * Math.sin(Math.PI * u), z); dm2.rotation.set(0, 0, 0); dm2.scale.set(1, 1, 1); dm2.updateMatrix(); bulbs.setMatrixAt(i++, dm2.matrix); } bulbs.frustumCulled = false; B.g.add(bulbs); }
+place(createChocolatePipe, 0, -10, 0, 1, 40, true); place(createChocolatePipe, 0, 2, 0, 1, 40, true);        // overhead pipes (no collision)
+// LAYOUT RULE: nothing solid stands in x = -3..3, so the walk from the entrance (z=16) to the door (z=-18) is always open
+const tbl = place(createCandyTable, -9, -3);
+[[0xff5fa2, 0xffffff], [0x2fc9b0, 0xffe45e], [0xffd23f, 0xffffff], [0x3a7bff, 0x7be0ff], [0xff8fcf, 0xffffff]].forEach(([c, d], k) => { const a = k * 1.2566, j = createJar(c, d); j.position.set(k === 4 ? 0 : Math.cos(a) * 2.9, 1.32, k === 4 ? 0 : Math.sin(a) * 2.9); j.scale.setScalar(k === 4 ? 1.35 : 1.1); tbl.add(j);
+  addItem(j, 'Giant candy jar', `A jar of experimental sweets, waiting for Wonka's next invention.`, { range: 6 }); });
+place(createLabBench, -11, 12, 0, 1, 6, 0); place(createLabBench, 11, 12, 0, 1, 6, 2);
+const MD = [['Experimental mixer', 'Wonka tests new recipes here before anyone is allowed to taste them.'], ['Candy kettle', 'Pipes feed the kettle while the gear and piston keep everything stirred.'], ['Sweet-making engine', 'Steam, gears and pipes turn raw ingredients into brand-new sweets.']];
+for (let i = 0; i < 3; i++) { const m = place(createCandyMachine, -17.5, 6 - i * 6.5, Math.PI / 2, 1, PAL[i]); addItem(m, MD[i][0], MD[i][1], { range: 4.5, tag: 'mach', use: () => { m.userData.lock = 4; } }); }
+for (let i = 0; i < 2; i++) { const t = place(createTank, 17.5, 4 - i * 6, 0, 1, i ? 0xc9b3ff : 0xffd0e6); addItem(t, 'Tempering tank', 'Chocolate is warmed and cooled here until it shines.', { range: 4.5 }); }
+place(createControlPanel, 17, -8.5, -Math.PI / 2, 1.2);
+place(createChocoBelt, -10, -14, 0, 1, 8); place(createChocoBelt, 10, -14, 0, 1, 8);                          // belts sit beside the aisle, not across it
+for (const x of [-18, 18]) { place(createVat, x, -17.5); steam(B.g, x, 3, -17.5); }
+{ const pd = place(createPedestal, 9, -3); const gob = mesh(sph(.6), M(0xff5fa2, { roughness: .2 }), 0, 1.5, 0, pd); mesh(tor(.6, .05), M(0xffffff), 0, 1.5, 0, pd).rotation.x = Math.PI / 2; pd.userData.feet = [[0, 0, .8, .8]];
+  addItem(gob, 'Everlasting Gobstopper', 'A sweet for children with little money: you can suck it forever and it never gets smaller.', { lift: true, range: 3 }); }
+const gum = place(createCandyMachine, 13, 5, Math.PI, 1, 0xffe45e); const gumIt = addItem(gum, 'Three-Course Dinner Chewing Gum', 'Press E to run the experiment: tomato soup, then roast beef, then blueberry pie.', { range: 4.5, tag: 'mach',
+  use: () => { const c = [['Course 1: tomato soup', 0xe8344e], ['Course 2: roast beef', 0x8a5a30], ['Course 3: blueberry pie', 0x4a6aff]][gumIt.n = ((gumIt.n ?? -1) + 1) % 3]; gumIt.text = c[0] + '. One piece of gum, a whole dinner.'; gum.userData.lock = 4; gum.children[2].material.emissive.set(c[1]); } });
+// ===== MORE INVENTING-ROOM EQUIPMENT (everything stays outside the central aisle x = -3..3) =====
+{ const rc = place(createReactor, -7, 6); addItem(rc, 'Cocoa reactor', 'The heart of the room: it cooks raw cocoa inside the glass while the rings spin around it.', { range: 5 }); }
+place(createHopper, 7, 8); place(createLabBench, -10, -10.5, 0, 1, 6, 1); place(createLabBench, 10, -10.5, 0, 1, 6, 3);
+for (const sd of [-1, 1]) { const sh = place(createShelf, sd * 6.3, -19.2, 0, 1, 4); addItem(sh, 'Candy shelf', 'Rows of jars: every new sweet gets its own label before the testing begins.', { range: 5 }); }
+place(createFlask, -19, 15, 0, 3, 0x7be0ff); place(createFlask, 19, 15, 0, 3, 0xff5fa2);
+for (const [x, y, r, c] of [[-5.5, 11, 1.4, 0xffd23f], [5.5, 11, 1.4, 0xff7ab8], [-16, 10.5, 1.9, 0xd9a82a], [16, 10.5, 1.9, 0xd9a82a]]) place(createGear, x, -19.5, 0, 1, r, c).position.y = y;
+for (const [x, y, r, c] of [[-8, 11, 1.6, 0xffd23f], [8, 11, 1.6, 0xff7ab8], [-15, 9.5, 1.3, 0xd9a82a], [15, 9.5, 1.3, 0xd9a82a]]) place(createGear, x, 19.5, Math.PI, 1, r, c).position.y = y;
+[[-1, 5, 'FIZZY LIFTING DRINKS'], [-1, -6, 'HAIR TOFFEE'], [1, 5, 'EVERLASTING GOBSTOPPERS'], [1, -13, 'SQUARE SWEETS THAT LOOK ROUND']].forEach(([sd, z, tx]) => { const sg = place(createRoomSign, sd * 21.6, z, -sd * Math.PI / 2, .55, tx); sg.position.y = 12.4; });
+wallSign('THE INVENTING ROOM'); addDoor(0, -18.3, 5); place(createFactoryDoor, 0, -19.5);
+
+// ===== E. NUT ROOM (reference: pale blue glossy room, white cup hoppers, big squirrels, blue stairs) =====
+newRoom('E', 400, { floor: 0xeaf6ff, wall: 0xbfe3f5, ceil: 0xdff2fb });
+for (let k = 0; k < 4; k++) { const r = mesh(tor(5 + k * 3.2, .3), M(0x9fd0f0, { roughness: .3 }), k % 2 ? 3 : -3, .03, -3 + (k % 3) * 2, B.g); r.rotation.x = Math.PI / 2; r.scale.z = .05; r.castShadow = false; }   // blue swoosh on the floor
+for (const z of [-8, 3]) mesh(box(40, .2, .3), GS(0x9fd8ff, 1.2), 0, 15.6, z, B.g).castShadow = false;
+place(createWhitePipe, 0, -5, 0, 1, 40); place(createWhitePipe, 0, 8, 0, 1, 40);
+const stations = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) {   // two columns of stations: the middle aisle to the door stays empty
+  const x = c ? 10 : -10, z = 5 - r * 8, st = place(createWhiteStation, x, z); stations.push(st); place(createBigSquirrel, x, z - 1.4, Math.PI, 1.5); place(createCupHopper, x, z - 3.4);
+  for (let k = 0; k < 5; k++) mesh(sph(.14, 8), M(0xb07a3a), x + (k - 2) * .3, 1.1, z + .35, B.g);
+  addItem(st, 'Nut-sorting station', 'The squirrels tap each nut to test it. Good nuts go in the basket; bad ones down the chute.', { range: 4, tag: 'sort', use: () => { st.userData.sort = { t: 0, good: !st.userData.good }; st.userData.good = st.userData.sort.good; } }); }
+for (const x of [-7, 7]) place(createBigSquirrel, x, 10.5, Math.atan2(x, -5.5), 1.9);   // big squirrels greet you, facing the entrance                // big squirrels near the entrance
+place(createStairs, 18.5, -8.5); for (const x of [-19.5, 19.5]) place(createNutBin, x, 6);
+place(createChocoBelt, -12, 12, 0, 1, 8, 'nut'); place(createChocoBelt, 12, 12, 0, 1, 8, 'nut');
+for (const x of [-7, 7]) { const m = place(createCandyMachine, x, -15, 0, 1, 0xf4faff); addItem(m, 'Nut-handling machine', 'Gathers the good nuts that the squirrels have picked out.', { range: 4.5, use: () => { m.userData.lock = 4; } }); }
+wallSign('THE NUT ROOM'); addDoor(0, -18.3, 6); place(createFactoryDoor, 0, -19.5);
+
+// ===== F. TELEVISION-CHOCOLATE ROOM (reference: white curved studio, ribbed dome, skylight, sphere TV pod) =====
+newRoom('F', 600, { floor: 0xeef2f5, wall: 0xf4f6fa, ceil: 0xe6ecf2 });
+{ const d = mesh(new THREE.SphereGeometry(1, 28, 10, 0, 6.2832, 0, Math.PI / 2), M(0xf2f5f9, { side: THREE.BackSide, roughness: .5 }), 0, 7, 0, B.g); d.scale.set(21, 9, 19); d.castShadow = false;
+  for (let k = 1; k < 4; k++) { const r = mesh(tor(1, .012), M(0x8a95a5), 0, 7 + k * 2.2, 0, B.g), sc = Math.sqrt(1 - Math.pow(k * 2.2 / 9, 2)); r.scale.set(21 * sc, 19 * sc, 1); r.rotation.x = Math.PI / 2; r.castShadow = false; }
+  for (let k = 0; k < 8; k++) { const m = mesh(tor(1, .012, Math.PI), M(0x8a95a5), 0, 7, 0, B.g); m.scale.set(20, 9, 1); m.rotation.y = k * Math.PI / 8; m.castShadow = false; }
+  const sk = mesh(new THREE.CircleGeometry(3.2, 28), GS(0xffffff, 1.8), 0, 15.9, -2, B.g); sk.rotation.x = Math.PI / 2; sk.castShadow = false; const sr = mesh(tor(3.3, .15), M(0xd0d8e0), 0, 15.85, -2, B.g); sr.rotation.x = Math.PI / 2; }
+for (let k = 0; k < 3; k++) mesh(cyl(7.5 - k * 1.6, 7.5 - k * 1.6, .12, 36), M(k % 2 ? 0xdde6f0 : 0xffffff, { roughness: .2 }), -4, .06 + k * .1, -13, B.g).castShadow = false;   // tiered platforms
+const tv = place(createBigTV, -4, -13);
+{ const rg = mesh(tor(8, .15), M(0xd0d8e0), 0, 11, -4, B.g); rg.rotation.x = Math.PI / 2; for (let k = 0; k < 8; k++) { const a = k * .7854; mesh(cone(.5, 1, 8), M(0xf0f4f8), Math.cos(a) * 8, 10.6, -4 + Math.sin(a) * 8, B.g).rotation.x = Math.PI; mesh(sph(.22, 8), GS(0xffffff, 1.8), Math.cos(a) * 8, 10, -4 + Math.sin(a) * 8, B.g); } }   // ring of spotlights
+const cam = place(createTVCam, 3, -6); place(g => { const o = new THREE.Group(); mesh(box(2, .9, 1.4), M(0xffffff), 0, .45, 0, o); o.userData.feet = [[0, 0, 1, .7]]; return o; }, 8, -6);
+const bar = mesh(box(1.4, .25, .8), M(0x5a2d14, { roughness: .3 }), 0, 0, 0, B.g); bar.position.set(8, 1.1, -6);
+for (let i = 0; i < 3; i++) mesh(box(.4, .05, .3), M(0x7a4a24), -.4 + i * .4, .15, 0, bar);
+const outBar = makeChocoBar(); outBar.visible = false; B.g.add(outBar);          // the bar that pops out of the screen
+const orbs = [0, 1, 2, 3, 4, 5].map(() => { const o = mesh(sph(.13, 8), GS(0xffd08a, 2.2), 0, 0, 0, B.g); o.visible = false; o.castShadow = false; return o; });   // pieces flying camera -> TV
+place(() => { const pd = createPedestal(); pd.userData.feet = [[0, 0, .8, .8]]; return pd; }, -4, -9.3, 0, 1.5);
+place(createVat, 12, -14); steam(B.g, 12, 3, -14); place(createChocolatePipe, 8, -16, 0, 1, 14); place(createChocolatePipe, 0, -12, 0, 1, 40, true);
+let tvT = -1, tvMode = 'idle', tvS = 0; const demo = () => { if (tvT < 0) tvT = 0; };
+addItem(tv, 'Wonka-Vision television', 'Press E: the chocolate bar travels through the camera and pops out of the screen.', { range: 6, tag: 'tv', use: demo });
+addItem(cam, 'Television-Chocolate camera', 'It breaks a bar into tiny pieces, sends it through the air and rebuilds it inside the TV.', { range: 5, tag: 'tv', use: demo });
+addItem(bar, 'Chocolate bar', 'The bar in the experiment. Watch it disappear and reappear.', { range: 4, use: demo });
+{ const cd = place(createControlPanel, -18.5, -8, Math.PI / 2, 1.2); addItem(cd, 'Control desk', 'Dials and switches steer the chocolate transmission.', { range: 4.5 }); }
+for (let k = 0; k < 4; k++) { mesh(box(.2, 2.3, 3.3), M(0xd0d8e0), 21.6, 3.2, -12 + k * 5.5, B.g); mesh(box(.15, 2, 3), G(PAL[k % 5], 1.2), 21.5, 3.2, -12 + k * 5.5, B.g).castShadow = false; }
+for (const x of [-19, 19]) place(createDish, x, 10, x > 0 ? Math.PI : 0); for (const x of [-10, 10]) place(createStageLight, x, 6); place(createTVCam, 14, 4, 2.6); place(createTVCam, -8, 6, .6);
+for (let k = 0; k < 3; k++) { const r = mesh(tor(1.2 + k * .3, .06), GS(0x66ccff, 1.6), 1.5 - k * 2.2, 2.6, -7.5 - k * 1.8, B.g); r.rotation.y = -2.29; r.castShadow = false; }
+for (let k = 0; k < 2; k++) place(createTank, -20, 4 + k * 6, 0, 1, 0xf4f8ff);
+wallSign('THE TELEVISION-CHOCOLATE ROOM'); addDoor(-14, -18.3, 7); place(createFactoryDoor, -14, -19.5);
+
+/* ===== v14 ADDITIONS: collectible chocolate bites, the Great Glass Elevator plaza (factory in the background) and the Wonka vending hall ===== */
+const biteGlowM = new THREE.SpriteMaterial({ blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, map: (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,232,150,.7)'); g.addColorStop(.4, 'rgba(255,190,70,.2)'); g.addColorStop(1, 'rgba(255,190,70,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })() });
+const PRICE = 20; let nBites = 0, vmMsg = 'Insert your|chocolate bites!';
+const vmCv = document.createElement('canvas'); vmCv.width = 256; vmCv.height = 200; const vmX = vmCv.getContext('2d'), vmTex = ctex(vmCv);
+function drawVM() {                                               // the vending-machine LCD: price, your bites, a message
+  const c = vmX; c.fillStyle = '#07121a'; c.fillRect(0, 0, 256, 200); c.strokeStyle = '#7dffb2'; c.lineWidth = 4; c.strokeRect(3, 3, 250, 194); c.textAlign = 'center';
+  c.fillStyle = '#ffd24a'; c.font = 'bold 30px Georgia'; c.fillText('WONKA BAR', 128, 40); c.fillStyle = '#7dffb2'; c.font = 'bold 28px Georgia'; c.fillText('PRICE 🍫 ' + PRICE, 128, 80);
+  c.fillStyle = nBites >= PRICE ? '#7dffb2' : '#ff9a9a'; c.font = '22px Georgia'; c.fillText('YOUR BITES: ' + nBites, 128, 118); c.fillStyle = '#fff'; c.font = 'italic 20px Georgia';
+  vmMsg.split('|').forEach((l, i) => c.fillText(l, 128, 156 + i * 26)); vmTex.needsUpdate = true; }
+drawVM();
+function createBite() {                                           // one small chocolate piece: dark base, raised top, grid lines, gold foil corner, soft golden glow so it reads like a coin
+  const g = new THREE.Group(), a = M(0x4a2410, { roughness: .3 }), b = M(0x7a4524, { roughness: .25 }), foil = M(0xffd24a, { metalness: .6, roughness: .25 });
+  const m1 = mesh(box(.34, .16, .34), a, 0, 0, 0, g), m2 = mesh(box(.24, .06, .24), b, 0, .1, 0, g), m3 = mesh(box(.24, .07, .025), a, 0, .1, 0, g), m4 = mesh(box(.025, .07, .24), a, 0, .1, 0, g), m5 = mesh(box(.1, .09, .1), foil, .15, .02, .15, g);
+  for (const m of [m1, m2, m3, m4, m5]) m.castShadow = false; const sp = new THREE.Sprite(biteGlowM); sp.scale.setScalar(.85); g.add(sp); g.scale.setScalar(1.3); return g; }
+
+function createGlassElevator() {                                  // ten glass panels in a gold frame, glass spire roof, glowing base, button console at the back; the front panel is the open doorway (faces +z)
+  const g = new THREE.Group(), gold = M(0xd9a82a, { roughness: .22, metalness: .7 }), A = 2.3, Hh = 5, glass = new THREE.MeshStandardMaterial({ color: 0xd6f2ff, transparent: true, opacity: .22, roughness: .03, metalness: .15, side: THREE.DoubleSide, depthWrite: false });
+  mesh(cyl(3.3, 3.5, .14, 40), gold, 0, .07, 0, g); mesh(cyl(2.6, 2.6, .06, 10), M(0xfff6dc, { roughness: .3 }), 0, .17, 0, g); mesh(tor(3.2, .06), GS(0x7be0ff, 1.6), 0, .16, 0, g).rotation.x = Math.PI / 2;
+  const Rv = A / Math.cos(Math.PI / 10);
+  for (let i = 0; i < 10; i++) { const v = i * Math.PI / 5; mesh(cyl(.07, .07, Hh + .6, 8), gold, Rv * Math.cos(v), (Hh + .6) / 2 + .14, Rv * Math.sin(v), g); mesh(sph(.1, 8), gold, Rv * Math.cos(v), Hh + .75, Rv * Math.sin(v), g);
+    const f = Math.PI / 10 + i * Math.PI / 5, rot = -f - Math.PI / 2, px = A * Math.cos(f), pz = A * Math.sin(f);
+    const topRail = mesh(box(1.5, .08, .08), gold, px, Hh + .12, pz, g); topRail.rotation.y = rot;
+    if (i === 2) continue;                                          // the doorway
+    const gl = mesh(box(1.5, Hh - .1, .03), glass, px, .2 + (Hh - .1) / 2, pz, g); gl.rotation.y = rot; gl.castShadow = false;
+    for (const y of [.55, 2.6]) { const r = mesh(box(1.5, .07, .07), gold, px, y, pz, g); r.rotation.y = rot; } }
+  mesh(cyl(.35, 2.55, .22, 10), gold, 0, Hh + .75, 0, g); const roof = mesh(cone(2.45, 2.2, 10), glass, 0, Hh + 1.95, 0, g); roof.castShadow = false;
+  mesh(cyl(.04, .04, 1.4, 6), gold, 0, Hh + 3.6, 0, g); mesh(sph(.22, 12), GS(0xffe08a, 2.4), 0, Hh + 4.4, 0, g); mesh(tor(1.1, .05), gold, 0, Hh + 1.2, 0, g).rotation.x = Math.PI / 2;
+  const cs = new THREE.Group(); cs.rotation.y = Math.PI / 2; g.add(cs);                  // console on the left wall, so the factory behind stays visible through the glass
+  const con = mesh(box(1.9, 1.0, .55), M(0x3a2a1a, { roughness: .4 }), 0, .7, -1.78, cs); mesh(box(2, .08, .62), gold, 0, 1.24, -1.78, cs);
+  const sl = mesh(box(1.8, .07, .5), M(0x241a10), 0, 1.32, -1.74, cs); sl.rotation.x = -.45;
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 6; c++) { const b = mesh(sph(.075, 8), GS(PAL[(r + c) % 5], 1.5), -.7 + c * .28, 1.33 + r * .13 + .02, -1.6 - r * .12, cs); b.castShadow = false; }
+  const big = mesh(cyl(.19, .19, .08, 16), GS(0x7dffb2, 2.4), 0, 1.5, -1.5, cs); big.rotation.x = Math.PI / 2 - .45; big.castShadow = false; mesh(tor(.23, .03), gold, 0, 1.5, -1.5, cs).rotation.x = Math.PI / 2 - .45;
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const c = cv.getContext('2d'); c.fillStyle = '#2a1608'; c.fillRect(0, 0, 512, 128); c.strokeStyle = '#d9a82a'; c.lineWidth = 8; c.strokeRect(4, 4, 504, 120);
+  c.fillStyle = '#7dffb2'; c.font = 'bold 44px Georgia'; c.textAlign = 'center'; c.fillText('WONKA BAR', 256, 62); c.fillText('VENDING MACHINE', 256, 108);
+  const lb = mesh(new THREE.PlaneGeometry(1.5, .38), new THREE.MeshBasicMaterial({ map: ctex(cv), toneMapped: false }), 0, 2.35, -2.12, cs); lb.castShadow = false;   // label on the back glass
+  return g; }
+
+function createFactoryBackdrop() {                                // the factory seen behind the elevator: pink main hall with striped chimneys, two wings, WONKA sign, steam, candy trees, a chocolate river
+  const g = new THREE.Group(); const main = createFactoryBuilding(36, 14, 14); g.add(main); steam(main, 0, 14 + 21, 0); steam(main, -10, 14 + 21, 0); steam(main, 10, 14 + 21, 0);
+  for (const sd of [-1, 1]) { const w = createFactoryBuilding(18, 9, 10); w.position.set(sd * 29, 0, 4); g.add(w); steam(w, 0, 9 + 21, 0); }
+  const sg = createRoomSign('WILLY WONKA’S CHOCOLATE FACTORY'); sg.position.set(0, 16.5, 7.6); sg.scale.setScalar(2); g.add(sg);
+  mesh(box(70, .12, 9), M(0x5a2d14, { roughness: .15, metalness: .15 }), 0, .06, 14, g).castShadow = false; mesh(box(5, .14, 9.4), M(0xc8b08a, { roughness: .9 }), 0, .1, 14, g);   // river + a crossing
+  mesh(box(4, .05, 40), M(0xc8b08a, { roughness: .9 }), 0, .03, 38, g).castShadow = false;
+  return g; }
+
+function createVendingMachine() {                                 // big red Wonka bar vending machine: gold trim, glass window showing 16 bars, LCD price screen, keypad, bite slot, dispensing bay with a flap
+  const g = new THREE.Group(), red = M(0xc8283c, { roughness: .35, metalness: .25 }), gold = M(0xd9a82a, { roughness: .25, metalness: .7 }), dark = M(0x1c1210, { roughness: .6 });
+  mesh(box(5.6, .5, 2.9), gold, 0, .25, 0, g); mesh(box(5.2, 8, .3), red, 0, 4.5, -1.1, g);
+  for (const sd of [-1, 1]) mesh(box(.35, 8, 2.5), red, sd * 2.45, 4.5, 0, g); mesh(box(5.2, .45, 2.5), red, 0, 8.7, 0, g); mesh(box(5.2, .7, 2.5), red, 0, 1.0, 0, g); mesh(box(5.4, .22, 2.7), gold, 0, 9.05, 0, g);
+  mesh(box(.12, 7, 2.5), red, .55 + 1.3, 4.9, 0, g);                                                       // divider between window and side panel
+  const hc = document.createElement('canvas'); hc.width = 512; hc.height = 128; const hx = hc.getContext('2d'); const gr = hx.createLinearGradient(0, 0, 512, 0); gr.addColorStop(0, '#4a1a6a'); gr.addColorStop(1, '#7a2a9a'); hx.fillStyle = gr; hx.fillRect(0, 0, 512, 128);
+  hx.strokeStyle = '#ffd24a'; hx.lineWidth = 8; hx.strokeRect(6, 6, 500, 116); hx.fillStyle = '#ffd24a'; hx.font = 'bold 68px Georgia'; hx.textAlign = 'center'; hx.shadowColor = '#000'; hx.shadowBlur = 6; hx.fillText('WONKA BARS', 256, 88);
+  mesh(new THREE.PlaneGeometry(4.6, 1.15), new THREE.MeshBasicMaterial({ map: ctex(hc), toneMapped: false }), 0, 7.9, 1.27, g).castShadow = false;
+  mesh(box(3.7, 5.3, .06), GLASS, -.6, 4.6, 1.18, g).castShadow = false;
+  const bars = []; const wc = ['#5a2a8a', '#c8283c', '#2a6aa8', '#3a8a4a'];
+  for (let r = 0; r < 4; r++) { mesh(box(3.7, .07, 1.9), M(0xb8b8c0, { metalness: .5, roughness: .3 }), -.6, 2.45 + r * 1.3, .2, g);
+    for (let c = 0; c < 4; c++) { const b = new THREE.Group(), col = parseInt(wc[(r + c) % 4].slice(1), 16); b.position.set(-1.6 + c * .85, 3.02 + r * 1.3, .45); g.add(b); mesh(box(.7, 1.0, .14), M(col, { roughness: .35 }), 0, 0, 0, b); mesh(box(.72, .22, .15), M(0xffd24a, { metalness: .5, roughness: .3 }), 0, .1, 0, b); mesh(box(.2, .16, .16), M(0x2a1208), 0, .1, 0, b); bars.push(b); } }
+  g.userData.bars = bars; g.userData.pick = bars[9];                                                       // the bar that drops when you buy (row 2, column 1)
+  mesh(new THREE.PlaneGeometry(1.0, .78), new THREE.MeshBasicMaterial({ map: vmTex, toneMapped: false }), 1.85, 6.5, 1.27, g).castShadow = false;
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) mesh(box(.22, .22, .08), GS(PAL[(r * 3 + c) % 5], .9), 1.52 + c * .33, 5.35 - r * .32, 1.27, g).castShadow = false;
+  mesh(box(.95, .2, .08), gold, 1.85, 4.2, 1.27, g); mesh(box(.7, .08, .1), dark, 1.85, 4.2, 1.31, g); const sc = document.createElement('canvas'); sc.width = 256; sc.height = 40; const sx = sc.getContext('2d'); sx.fillStyle = '#ffd24a'; sx.font = 'bold 26px Georgia'; sx.textAlign = 'center'; sx.fillText('INSERT BITES', 128, 30);
+  mesh(new THREE.PlaneGeometry(.95, .15), new THREE.MeshBasicMaterial({ map: ctex(sc), transparent: true, toneMapped: false }), 1.85, 3.95, 1.28, g).castShadow = false;
+  mesh(box(3.7, 1.0, .1), dark, -.6, 1.12, 1.2, g); const flap = new THREE.Group(); flap.position.set(-.6, 1.6, 1.28); g.add(flap); mesh(box(3.5, .85, .06), M(0x2a2420, { transparent: true, opacity: .8 }), 0, -.45, 0, flap); g.userData.flap = flap;
+  mesh(box(.9, .12, 2), gold, 1.85, 1.5, 1.1, g);
+  g.userData.feet = [[0, 0, 2.8, 1.45]]; return g; }
+
+// ===== G. THE GREAT GLASS ELEVATOR PLAZA (stage 7): open courtyard, the whole factory standing behind the elevator =====
+const anc2 = (id, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); rooms[id].g.add(o); return o; };
+newRoom('G', 700, { w: 44, d: 44, outdoor: true, floor: 0x4db33d }); B.g.add(grassPlane(150, 170));
+mesh(cyl(8.5, 8.5, .08, 48), M(0xf0e4cc, { roughness: .8 }), 0, .04, 0, B.g).castShadow = false; mesh(tor(8.2, .09), GS(0xffd24a, 1.4), 0, .1, 0, B.g).rotation.x = Math.PI / 2;
+mesh(box(3, .04, 14), M(0xc8b08a, { roughness: .9 }), 0, .03, 14, B.g).castShadow = false;
+{ const fb = createFactoryBackdrop(); fb.position.set(0, 0, -50); B.g.add(fb); }
+for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, h = mesh(sph(1, 14), M([0x5fc040, 0x4aa832, 0x72d04a][i % 3], { roughness: 1 }), Math.cos(a) * 95, -2, Math.sin(a) * 95, B.g); h.scale.set(22 + i % 3 * 4, 9 + i % 4 * 3, 22); h.castShadow = false; }
+for (let i = 0; i < 16; i++) { const cl = new THREE.Group(), a = i * 2.4, r = 38 + (i * 37 % 40); cl.position.set(Math.cos(a) * r, 26 + (i * 53 % 80), Math.sin(a) * r); B.g.add(cl);
+  for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(sph(1, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .88, fog: false })); m.position.set(k * 2.2 - 3, Math.sin(k * 1.7) * .8, Math.cos(k) * .8); m.scale.set(2.6 + k % 2, 1.6, 2); cl.add(m); } }
+[[-11, 4], [11, 4], [-11, -6], [11, -6], [-6, 12], [6, 12]].forEach(([x, z]) => place(createLampPost, x, z));
+[[-17, -14, 0, 8], [17, -14, 1, 8], [-18, 8, 2, 7], [18, 8, 3, 7]].forEach(([x, z, k, h]) => place(createTwistTree, x, z, 0, 1, k, h));
+[[-14, 15, .2], [14, 15, -.2], [-19, -3, .4], [19, -3, -.4]].forEach(([x, z, r], k) => place(createPop, x, z, r, 1, k, 5 + k % 3));
+const elevG = place(createGlassElevator, 0, 0);
+for (let i = 0; i < 10; i++) if (i !== 2) { const f = Math.PI / 10 + i * Math.PI / 5; addSolid(2.3 * Math.cos(f), 2.3 * Math.sin(f), .78, .14, -f - Math.PI / 2); }   // glass walls block you; the front stays open
+let elevUp = false;
+function launchElevator() {                                        // press the button: doors stay open to the sky, the cabin lifts, drifts toward the factory and carries you to the vending hall
+  if (ride || fade || elevUp) return; elevUp = true; sfx.machine(); blip(140, 900, 7, .07, 'sine'); $('obj').textContent = 'Going up! Look at the factory below...'; toast('Going up! 🛗');
+  const ox = room.ox, x0 = rig.position.x - ox, z0 = rig.position.z, a0 = ((rig.rotation.y + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI, p0 = pitch;
+  ride = { t: 0, dur: 7, upd: k => { const go = Math.min(1, k * 8), L = clamp((k - .08) / .92, 0, 1), e = L * L * (3 - 2 * L), ex = 14 * Math.sin(e * 2.2) * e, ey = 70 * e, ez = -34 * e;
+      elevG.position.set(ex, ey, ez); rig.position.set(ox + ex + x0 * (1 - go), ey + .18 * go, ez + z0 * (1 - go)); rig.rotation.y = a0 * (1 - go); pitch = p0 * (1 - go) - .12 * go; },
+    done: () => fadeTo(() => { elevG.position.set(0, 0, 0); elevUp = false; pitch = 0; enter(8); }) }; }
+addItem(anc2('G', 0, 1, 3.8), 'Great Glass Elevator', 'Step inside through the open front, then press the glowing button on the console.', { range: 3.4 });
+addItem(anc2('G', -1.5, 1.5, 0), 'Elevator button: Wonka bar vending machine', 'Press E: ride up to the Wonka bar vending machine.', { range: 3.6, use: launchElevator });
+
+// ===== H. THE WONKA VENDING HALL (stage 8): a grand pink hall with the Wonka bar vending machine; buy a bar with your chocolate bites to finish the story =====
+newRoom('H', 800, { w: 36, d: 32, h: 15, floor: 0xf3e6d0, wall: 0xf6b6d2, ceil: 0xfff3dc });
+mesh(box(5, .03, 28), M(0xc8283c, { roughness: .8 }), 0, .02, 0, B.g).castShadow = false; for (const sd of [-1, 1]) mesh(box(.28, .035, 28), M(0xd9a82a, { metalness: .5, roughness: .4 }), sd * 2.65, .025, 0, B.g).castShadow = false;
+for (const sd of [-1, 1]) for (const z of [-11, -4, 3, 10]) { mesh(cyl(.8, .9, 13.5, 16), M(0xffffff, { roughness: .4 }), sd * 12, 6.75, z, B.g); for (let j = 0; j < 6; j++) mesh(cyl(.84, .84, .8, 16), M(0xe8344e, { roughness: .4 }), sd * 12, 1.4 + j * 2.1, z, B.g); addSolid(sd * 12, z, .95, .95); }
+for (const z of [-8, 0, 8]) { mesh(tor(1.3, .09), M(0xd9a82a, { metalness: .6, roughness: .3 }), 0, 11.5, z, B.g).rotation.x = Math.PI / 2; mesh(sph(.65, 14), GS(0xffe08a, 1.3), 0, 11.5, z, B.g).castShadow = false; mesh(cyl(.03, .03, 3.5, 6), M(0xd9a82a), 0, 13.3, z, B.g); }
+{ const sg = createRoomSign('WONKA’S WHIPPLE-SCRUMPTIOUS BARS'); sg.position.set(0, 12, -15.3); sg.scale.setScalar(1.1); B.g.add(sg); }
+for (const sd of [-1, 1]) for (let r = 0; r < 3; r++) for (let c = 0; c < 3 - r; c++) mesh(box(1.1, .22, .7), M([0x5a2a8a, 0xc8283c, 0x2a6aa8][(r + c) % 3], { roughness: .35 }), sd * 7.5 + (c - (2 - r) / 2) * 1.2, .13 + r * .24, -13, B.g);
+const vmG = place(createVendingMachine, 0, -12.3);
+const vm = { t: -1, bought: false, bar: vmG.userData.pick, p0: vmG.userData.pick.position.clone(), flap: vmG.userData.flap };
+
+
+/* ===== 5. STATE, DAY/NIGHT, MAP, GOLDEN TICKET, RIDES ===== */
+const STAGES = [['Factory Entrance', 'A', [0, 26]], ['Chocolate Room', 'B', [0, 16]], ['Chocolate River Boat Journey', 'B', null], ['Dark Tunnel', 'C', [0, 36]], ['Inventing Room', 'D', [0, 16]], ['Nut Room', 'E', [0, 16]], ['Television-Chocolate Room', 'F', [0, 16]], ['The Great Glass Elevator', 'G', [0, 16]], ['The Wonka Vending Hall', 'H', [0, 12]]];
+const OBJ = ['Walk through the gates and into the factory.', 'Explore, cross the stone bridge and find the pink boat (E).', 'Sailing down the chocolate river...', 'Through the dark tunnel...', 'Look at the giant jars, find the machines, then take the far door.', 'Watch the squirrels sort nuts, then take the far door.', 'Try the TV experiment, then take the far door to the Great Glass Elevator.', 'Collect the bites, step into the glass elevator and press the glowing button.', 'Walk down the red carpet and buy a Wonka bar with your chocolate bites.'];
+let stage = 0, room = rooms.A, mode = 'day', ride = null, held = null, boatRide = false; const $ = id => document.getElementById(id);
+// ENV per room and mode: [background/fog, fog density, sun, hemisphere, sun colour, sky colour, ground colour, glow multiplier, warm-light intensity, warm-light colour]
+const ENV = {
+  A: { day: [0x9fd4ff, .004, 2.6, 1.5, 0xfff2d0, 0xdff0ff, 0x6a8a5a, .45, 15, 0xffe0b0], night: [0x1a1440, .01, .4, .6, 0x8a7cff, 0x5a4a9a, 0x2a2a4a, 2.6, 90, 0xffa050] },
+  B: { day: [0xbfe6ff, .004, 2.5, 1.5, 0xfff0d0, 0xe8f6ff, 0x4db33d, .5, 20, 0xffd090], night: [0x1a1050, .012, .5, .7, 0x8a7cff, 0x5a4aaa, 0x1a4a2a, 2.8, 150, 0xffa050] },
+  C: { day: [0x050308, .06, .05, .3, 0x442222, 0x221028, 0x100808, 1.4, 50, 0xff7a30] },
+  D: { day: [0xd9a58a, .006, 1.5, 1.2, 0xffd8a0, 0xffe4c8, 0x8a5a4a, .9, 90, 0xffb060], night: [0x2a1a2a, .012, .4, .6, 0xff9a60, 0x6a4a5a, 0x2a1a1a, 2.0, 130, 0xffa050] },
+  E: { day: [0xd6ecf7, .005, 2.2, 1.6, 0xfff6e0, 0xeaf6ff, 0xb0d4ea, .7, 40, 0xffe0b0], night: [0x0e1a3a, .012, .5, .7, 0x8ab0ff, 0x4a6aaa, 0x203050, 2.4, 140, 0x9ad0ff] },
+  F: { day: [0xf4f6fa, .005, 2.2, 1.7, 0xfff0d0, 0xf0f4ff, 0xc0c8d0, .8, 40, 0xffd0a0], night: [0x0e1030, .012, .5, .7, 0x7a9aff, 0x3a4a9a, 0x1a1a30, 2.4, 140, 0x66aaff] } };
+ENV.G = { day: [0xbfe6ff, .0025, 2.6, 1.5, 0xfff2d0, 0xe0f0ff, 0x6aa050, .5, 15, 0xffe0b0], night: [0x120c3a, .004, .5, .7, 0x8a7cff, 0x5a4aaa, 0x2a2a4a, 2.4, 100, 0xffa050] };
+ENV.H = { day: [0xf6d6e4, .004, 1.6, 1.5, 0xfff0d0, 0xfff6ee, 0xe8c8b0, .8, 110, 0xffe0b0], night: [0x2a1a2a, .006, .5, .8, 0xffc080, 0xffd8c0, 0x6a4a4a, 1.6, 150, 0xffa050] };
+ENV.C.night = ENV.C.day;
+function applyEnv(id) {
+  const e = ENV[id][mode]; scene.background.set(e[0]); scene.fog.color.set(e[0]); scene.fog.density = e[1]; sun.intensity = e[2]; hemi.intensity = e[3]; sun.color.set(e[4]); hemi.color.set(e[5]); hemi.groundColor.set(e[6]);
+  glowMats.forEach(m => m.emissiveIntensity = (m.userData.base || 1) * e[7]); for (const k in skies) { const [d, n] = skies[k]; d.visible = k === id && mode === 'day'; n.visible = k === id && mode === 'night'; n.material.color.set(k === 'A' ? 0x6a6a9a : 0x5a4a8a); }
+  hillsA.forEach((h, i) => h.material.color.set((mode === 'day' ? [0x5aa04a, 0x4a9040, 0x6ab050] : [0x4a4a8a, 0x5a4a8a, 0x3a3a7a])[i % 3])); rooms.A.g.children[0].material.color.set(mode === 'day' ? 0x9a9aa8 : 0x5a5a72);
+  warm.forEach(l => { l.intensity = e[8]; l.color.set(e[9]); });
+}
+function enter(st) {
+  stage = st; const [name, id, sp] = STAGES[st]; for (const k in rooms) rooms[k].g.visible = k === id; room = rooms[id];
+  if (sp) { rig.position.set(room.ox + sp[0], 0, sp[1]); rig.rotation.y = 0; } vel.set(0, 0, 0); vy = 0; held = null;
+  if (st === 1) { boatRide = false; boatB.position.x = 9; boatB.position.z = -5.6; }
+  applyEnv(id); spark.visible = id === 'B'; warm[0].position.set(room.ox - 10, 6, -6); warm[1].position.set(room.ox + 10, 6, 6);
+  $('room').textContent = name; $('next').textContent = st < 8 ? 'Next: ' + STAGES[st + 1][0] : 'Return home or open the map'; $('obj').textContent = OBJ[st]; story.enterStage(st); refreshTicket(); if (mapP.visible || $('map').style.display === 'flex') buildMap();
+}
+const fadeM = new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0, depthTest: false }), fadeP = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), fadeM);
+fadeP.position.z = -.3; fadeP.renderOrder = 1000; camera.add(fadeP);                // black plane on the camera = fade that also works in VR
+let fade = null; const fadeTo = cb => { if (!fade && !ride) fade = { dir: 1, cb }; };
+function goHome() { ride = null; boatRide = false; fade = null; fadeM.opacity = 0; fadeTo(() => enter(0)); }   // HOME = factory entrance
+
+// --- MAP: one canvas drawn with simple shapes; shown as an overlay on desktop and as a panel in front of the face in VR ---
+const mapCv = document.createElement('canvas'); mapCv.width = 620; mapCv.height = 420; const mx = mapCv.getContext('2d'), mapTex = new THREE.CanvasTexture(mapCv); mapTex.colorSpace = THREE.SRGBColorSpace;
+const mapP = new THREE.Mesh(new THREE.PlaneGeometry(1.05, .71), new THREE.MeshBasicMaterial({ map: mapTex, toneMapped: false, depthTest: false, fog: false })); mapP.position.z = -1.2; mapP.renderOrder = 1002; mapP.visible = false; camera.add(mapP);
+const STOPS = [['Factory Entrance', 'Walk through the gates'], ['Chocolate Room', 'Cross the bridge, take the boat at the dock'], ['Chocolate River', 'Short boat ride'], ['Dark Tunnel', 'Boat ride in the dark'], ['Inventing Room', 'Giant jars and strange machines'], ['Nut Room', 'Squirrels sort the nuts'], ['Television-Chocolate Room', 'Chocolate travels through the TV'], ['Great Glass Elevator', 'Step in and press the button'], ['Wonka Vending Hall', 'Buy a Wonka bar with your bites']];
+const mapIdx = () => stage === 0 ? 0 : stage === 1 ? (Math.abs(rig.position.z + 6) < 4.2 ? 2 : 1) : stage + 1;
+function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function wrapText(c, txt, x, y, w, lh) { let l = ''; for (const wd of txt.split(' ')) { const t = l + wd + ' '; if (c.measureText(t).width > w) { c.fillText(l, x, y); l = wd + ' '; y += lh; } else l = t; } c.fillText(l, x, y); return y; }
+function buildMap() {                                             // simple route list: done (tick) / you are here / next
+  mx.fillStyle = '#f3e2b8'; mx.fillRect(0, 0, 620, 420); mx.strokeStyle = '#6b3a1f'; mx.lineWidth = 5; mx.strokeRect(4, 4, 612, 412);
+  mx.textAlign = 'center'; mx.fillStyle = '#5a2d14'; mx.font = 'bold 26px Georgia'; mx.fillText('YOUR ROUTE THROUGH THE FACTORY', 310, 40);
+  const y0 = 76, dy = 37;
+  STOPS.forEach(([name, hint], i) => { const cy = y0 + i * dy, cur = i === stage, done = i < stage, nxt = i === stage + 1;
+    if (i) { mx.strokeStyle = done ? '#5fc07a' : '#c9a070'; mx.lineWidth = 6; mx.beginPath(); mx.moveTo(60, cy - dy + 13); mx.lineTo(60, cy - 13); mx.stroke(); }
+    if (cur) { mx.fillStyle = '#ff5fa2'; rr(mx, 20, cy - 17, 580, 34, 17); mx.fill(); }
+    mx.fillStyle = cur ? '#fff' : done ? '#5fc07a' : '#ffe0a0'; mx.beginPath(); mx.arc(60, cy, 13, 0, 6.2832); mx.fill(); mx.strokeStyle = '#6b3a1f'; mx.lineWidth = 3; mx.stroke();
+    mx.textAlign = 'center'; mx.fillStyle = cur ? '#ff2d87' : '#3a1a0a'; mx.font = 'bold 17px Georgia'; mx.fillText(done ? '✓' : cur ? '★' : String(i + 1), 60, cy + 6);
+    mx.textAlign = 'left'; mx.fillStyle = cur ? '#fff' : done ? '#6a8a70' : '#3a1a0a'; mx.font = 'bold 17px Georgia'; mx.fillText(name, 92, cy - 3);
+    mx.font = '12px Georgia'; mx.fillStyle = cur ? '#fff3dc' : '#7a5a3a'; mx.fillText(hint, 92, cy + 11);
+    mx.textAlign = 'right'; mx.font = 'bold 16px Georgia'; if (cur) { mx.fillStyle = '#fff'; mx.fillText('YOU ARE HERE', 584, cy + 5); } else if (nxt) { mx.fillStyle = '#c98a00'; mx.fillText('NEXT  →', 584, cy + 5); } });
+  mx.textAlign = 'center'; mx.fillStyle = '#5a2d14'; mx.font = '14px Georgia'; mx.fillText('H = go home   ·   M = close this map', 310, 404); mapTex.needsUpdate = true;
+}
+function toggleMap() {
+  if (renderer.xr.isPresenting) { mapP.visible = !mapP.visible; if (mapP.visible) buildMap(); return; }
+  const open = $('map').style.display !== 'flex'; $('map').style.display = open ? 'flex' : 'none'; if (open) { buildMap(); if (document.pointerLockElement) document.exitPointerLock(); } else if (started && !paused && !uiOpen) lockPtr();
+}
+
+// --- GOLDEN TICKET: 3D ticket on the camera. Front first, then a flip to the task on the back. Works on desktop and in VR. ---
+const TASKS = { B: ['edible', 3, 'Explore the Chocolate Room and find three unusual edible objects.'], D: ['mach', 3, 'Find three unusual machines in the Inventing Room.'], E: ['sort', 2, 'Find the squirrels and watch them sort nuts at two stations.'], F: ['tv', 2, 'Follow the chocolate transmission: inspect the camera, then the television.'] };
+const TS = {}; for (const k in TASKS) TS[k] = { on: false, found: new Set(), done: false };
+const tkF = document.createElement('canvas'), tkB = document.createElement('canvas'); tkF.width = tkB.width = 512; tkF.height = tkB.height = 320;
+const tk = { open: false, t: 0 }, tkG = new THREE.Group(); tkG.position.z = -1.1; tkG.visible = false; camera.add(tkG);
+const mkPlane = (cv, ry) => { const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(.9, .5625), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false, depthTest: false, fog: false })); m.renderOrder = 1001; m.rotation.y = ry; tkG.add(m); return m; };
+const fp = mkPlane(tkF, 0), bp = mkPlane(tkB, Math.PI);
+function goldBg(c) { c.clearRect(0, 0, 512, 320); const g = c.createLinearGradient(0, 0, 512, 320); g.addColorStop(0, '#ffe27a'); g.addColorStop(.5, '#ffc400'); g.addColorStop(1, '#e8a000'); c.fillStyle = g; rr(c, 4, 4, 504, 312, 26); c.fill(); c.strokeStyle = '#8a5a00'; c.lineWidth = 6; c.stroke(); c.strokeStyle = '#fff3b0'; c.lineWidth = 3; rr(c, 18, 18, 476, 284, 16); c.stroke(); c.fillStyle = '#5a2d14'; c.textAlign = 'center'; }
+function drawBack() {
+  const c = tkB.getContext('2d'), id = room.id, t = TASKS[id], s = TS[id]; goldBg(c); c.font = 'bold 34px Georgia'; c.fillText(`WONKA'S CHALLENGE`, 256, 70); c.font = '22px Georgia';
+  if (!t) { c.fillText('No challenge here. Enjoy the ride!', 256, 170); } else { wrapText(c, t[2], 256, 118, 400, 28); c.font = 'bold 26px Georgia'; c.fillText(`${s.found.size} / ${t[1]}`, 256, 215);
+    c.font = 'bold 22px Georgia'; c.fillText(s.done ? '' : s.on ? 'Look around and inspect with E' : '[ E / trigger ]  START TASK', 256, 262);
+    if (s.done) { c.save(); c.translate(256, 250); c.rotate(-.12); c.strokeStyle = '#c0182b'; c.fillStyle = '#c0182b'; c.lineWidth = 5; rr(c, -150, -28, 300, 56, 10); c.stroke(); c.font = 'bold 30px Georgia'; c.fillText('✓ TASK COMPLETE', 0, 11); c.restore(); } }
+  bp.material.map.needsUpdate = true; }
+function drawFront() { const c = tkF.getContext('2d'); goldBg(c); c.font = 'bold 54px Georgia'; c.fillText('GOLDEN TICKET', 256, 130); c.font = 'italic 26px Georgia'; c.fillText(`Wonka's Chocolate Factory`, 256, 180); c.font = 'bold 22px Georgia'; c.fillText('ADMIT ONE  ✦ ✦ ✦', 256, 240); fp.material.map.needsUpdate = true; }
+function refreshTicket() { drawFront(); drawBack(); }
+function toast(t) { $('toast').textContent = t; $('toast').style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => $('toast').style.opacity = 0, 2600); }
+function toggleTicket() { tk.open = !tk.open; tk.t = 0; tkG.visible = tk.open; tkG.rotation.y = 0; if (tk.open) drawBack(); }
+function ticketAction() { const t = TASKS[room.id], s = TS[room.id]; if (t && !s.on && !s.done && tk.t > 1.5) { s.on = true; s.found = new Set(); drawBack(); toast('Task started!'); return; } toggleTicket(); }
+function foundItem(it) {                                          // called when you inspect a task object
+  const t = TASKS[room.id], s = TS[room.id]; if (!t || !s.on || s.done || it.tag !== t[0] || s.found.has(it)) return; s.found.add(it);
+  if (s.found.size >= t[1]) { s.done = true; s.on = false; toast('✓ TASK COMPLETE'); sfx.reward(); } else { toast(`Found ${s.found.size} / ${t[1]}`); sfx.coin(); } drawBack(); }
+
+// --- BOAT + TUNNEL RIDE ---
+function beginBoat() {
+  if (ride || fade) return; stage = 2; boatRide = true; $('room').textContent = STAGES[2][0]; $('next').textContent = 'Next: ' + STAGES[3][0]; $('obj').textContent = OBJ[2]; rig.rotation.y = -Math.PI / 2; held = null;
+  ride = { t: 0, dur: 3, upd: k => { rig.position.set(room.ox + 9 + k * 12, .35, -5.6); boatB.position.x = 9 + k * 12; },     // the boat really sails down the river
+    done: () => fadeTo(() => { enter(3); $('obj').textContent = OBJ[3];
+      ride = { t: 0, dur: 6, upd: k => { rig.position.set(room.ox, .35, 36 - 72 * k); rideBoat.position.z = rig.position.z; warm[0].position.set(room.ox, 3, rig.position.z - 4); }, done: () => fadeTo(() => enter(4)) }; }) };
+}
+
+/* ===== 7. DESKTOP + VR CONTROLS ===== */
+const keys = {}; let pitch = 0, third = false, locked = false, drag = false;
+const dom = renderer.domElement, tmp = new THREE.Vector3();
+const lockPtr = () => { try { const p = dom.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+const avatar = createCharacter(); rig.add(avatar); avatar.userData.P.head.visible = false;   // first person: hide the head so the camera sits inside it
+function toggleView() { if (renderer.xr.isPresenting) return; third = !third; avatar.userData.P.head.visible = third; }
+let best = null;
+function interact() { if (ride || fade || uiOpen || paused) return; if (tk.open) return ticketAction(); if (held) { held = null; reachT = .4; blip(520, 380, .12, .1, 'triangle'); return; } if (!best) return; reachT = .5; blip(660, 880, .12, .1, 'triangle'); story.react(best); if (best.tag) foundItem(best); if (best.lift) held = best; else if (best.use) best.use(); }
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'Space') { e.preventDefault(); jump(); } if (e.code === 'Escape') { if ($('map').style.display === 'flex') toggleMap(); else if (started && !uiOpen && !paused) setPause(true); } if (e.code === 'KeyF') toggleView(); if (e.code === 'KeyN') story.skip(); if (e.code === 'KeyR') story.replay(); if (e.code === 'KeyV') story.setVoice(!story.voice); if (e.code === 'KeyP') story.toggle(); if (e.code === 'KeyC') story.show(!story.open); if (e.code === 'KeyB') closeRoom(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyM') toggleMap(); if (e.code === 'KeyT') toggleTicket(); if (e.code === 'KeyH') goHome(); });
+addEventListener('keyup', e => keys[e.code] = false);
+const begin = m => { mode = m; applyEnv(room.id); $('dn').textContent = 'SWITCH TO ' + (m === 'day' ? 'NIGHT' : 'DAY'); $('start').style.display = 'none'; started = true; lockPtr(); startAudio(); story.start(); };
+$('day').onclick = () => begin('day'); $('night').onclick = () => begin('night');
+$('mapb').onclick = toggleMap; $('insp').onclick = interact;
+dom.addEventListener('click', () => { if (paused || uiOpen || !started) return; if (!locked) lockPtr(); else interact(); });
+document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === dom; if (!locked && started && !paused && !uiOpen && !renderer.xr.isPresenting && $('map').style.display !== 'flex') setPause(true); });
+dom.addEventListener('mousedown', () => drag = true); addEventListener('mouseup', () => drag = false);   // click-drag fallback
+addEventListener('mousemove', e => { if (renderer.xr.isPresenting || paused || uiOpen || !(locked || drag)) return; rig.rotation.y -= e.movementX * .0025; pitch = clamp(pitch - e.movementY * .0025, -1.4, 1.4); });
+addEventListener('wheel', e => { if (renderer.xr.isPresenting) return; camera.fov = clamp(camera.fov + e.deltaY * .03, 30, 90); camera.updateProjectionMatrix(); }, { passive: true });
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+// PHYSICS: smooth acceleration, gravity, jumping. inp = what the player wants (from keyboard or VR stick).
+let started = false, paused = false, uiOpen = false, vy = 0, onGround = true, phase = 0, landT = 0, reachT = 0, stepSide = 0, vrJump = true;
+const vel = new THREE.Vector3(), inp = { f: 0, s: 0, fx: 0, fz: -1, run: false };
+function setPause(p) { paused = p; $('pause').style.display = p ? 'flex' : 'none'; if (p && document.pointerLockElement) document.exitPointerLock(); }
+$('resume').onclick = () => { setPause(false); lockPtr(); };
+function jump() { if (onGround && !ride && !fade && !uiOpen && !paused) { vy = 5.4; onGround = false; sfx.jump(); } }
+function physics(dt, xr) {
+  const sp = xr ? 2.5 : inp.run ? 6.5 : 3.2, a = Math.min(1, dt * (inp.f || inp.s ? 9 : 7));          // a = how fast we speed up / slow down
+  vel.x += ((inp.fx * inp.f - inp.fz * inp.s) * sp - vel.x) * a; vel.z += ((inp.fz * inp.f + inp.fx * inp.s) * sp - vel.z) * a;
+  rig.position.x += vel.x * dt; rig.position.z += vel.z * dt; collide(rig.position, .4);
+  vy -= 14 * dt; rig.position.y += vy * dt;                                                          // gravity
+  if (rig.position.y <= 0) { if (!onGround && vy < -3) { landT = .25; sfx.land(); } rig.position.y = 0; vy = 0; onGround = true; } else onGround = false;   // ground detection
+}
+renderer.xr.addEventListener('sessionstart', () => { third = false; started = true; camera.position.set(0, 0, 0); camera.fov = 70; $('start').style.display = 'none'; startAudio(); story.setVoice(true); story.start(); });
+renderer.xr.addEventListener('sessionend', () => camera.position.set(0, EYE, 0));
+for (let i = 0; i < 2; i++) { const c = renderer.xr.getController(i); rig.add(c); mesh(sph(.05, 8), M(0xffd9b0), 0, 0, 0, c).castShadow = false; mesh(cyl(.03, .03, .1, 8), M(0x3a7bd5), 0, 0, .07, c).rotation.x = Math.PI / 2;   // simple virtual hand
+  c.addEventListener('selectstart', interact); c.addEventListener('selectend', () => { if (held) held = null; }); }
+let snapReady = true, aPrev = false;
+function snapTurn(deg) { camera.getWorldPosition(tmp); const bx = tmp.x, bz = tmp.z; rig.rotation.y += THREE.MathUtils.degToRad(deg); rig.updateMatrixWorld(true); camera.getWorldPosition(tmp); rig.position.x += bx - tmp.x; rig.position.z += bz - tmp.z; }
+const prevB = {};
+function xrInput() {
+  inp.f = inp.s = 0; const ses = renderer.xr.getSession(); if (!ses) return;
+  for (const src of ses.inputSources) { const gp = src.gamepad; if (!gp) continue; const o = gp.axes.length > 3 ? 2 : 0, h = src.handedness, x = gp.axes[o], y = gp.axes[o + 1];
+    const edge = i => { const pr = !!(gp.buttons[i] && gp.buttons[i].pressed), r = pr && !prevB[h + i]; prevB[h + i] = pr; return r; };
+    if (h === 'left') {
+      if (Math.abs(x) > .15 || Math.abs(y) > .15) { renderer.xr.getCamera().getWorldDirection(tmp); tmp.y = 0; tmp.normalize(); inp.fx = tmp.x; inp.fz = tmp.z; inp.f = -y; inp.s = x; }   // relative to head
+      if (edge(4)) toggleTicket(); if (edge(5)) toggleMap(); if (edge(3)) goHome();                                    // X = jump, Y = comfort toggle
+    } else if (h === 'right') {
+      if (Math.abs(x) > .7) { if (snapReady) { snapTurn(x > 0 ? -30 : 30); snapReady = false; } } else if (Math.abs(x) < .3) snapReady = true;
+      if (edge(4) && vrJump) jump(); if (edge(5)) toggleAudio(); if (edge(3)) { mode = mode === 'day' ? 'night' : 'day'; applyEnv(room.id); }                                       // A = jump, B = sound
+    } }
+}
+
+/* ===== 8. INFO PANEL (HTML on desktop, canvas panel on the camera in VR) + highlight ring ===== */
+const pc = document.createElement('canvas'); pc.width = 640; pc.height = 160; const px = pc.getContext('2d'), ptex = new THREE.CanvasTexture(pc);
+const panel = new THREE.Mesh(new THREE.PlaneGeometry(.9, .225), new THREE.MeshBasicMaterial({ map: ptex, transparent: true, depthTest: false, fog: false, toneMapped: false }));
+panel.position.set(0, -.32, -1); panel.renderOrder = 999; panel.visible = false; camera.add(panel);
+let shown = null, shownT = '';
+function showInfo(it) {
+  const key = it ? it.text + (held === it) : ''; if (it === shown && (!it || key === shownT)) return; shown = it; shownT = key;
+  $('hud').innerHTML = it ? `<b>${it.title}</b><br>${it.text}` + (it.lift || it.use ? `<br><i style="color:#ffcf6b">Press E / trigger to ${it.lift ? (held === it ? 'put it back' : 'pick up and look closer') : 'use'}</i>` : '') : ''; $('hud').style.opacity = it ? 1 : 0; px.clearRect(0, 0, 640, 160); if (!it) return;
+  px.fillStyle = 'rgba(50,20,8,.9)'; px.fillRect(0, 0, 640, 160); px.strokeStyle = '#ffcf6b'; px.lineWidth = 6; px.strokeRect(3, 3, 634, 154);
+  px.fillStyle = '#ffcf6b'; px.font = 'bold 30px Georgia'; px.fillText(it.title, 20, 44, 600); px.fillStyle = '#fff3dc'; px.font = '23px Georgia';
+  let l = '', y = 80; for (const w of it.text.split(' ')) { const t = l + w + ' '; if (px.measureText(t).width > 600) { px.fillText(l, 20, y); l = w + ' '; y += 29; } else l = t; } px.fillText(l, 20, y); ptex.needsUpdate = true;
+}
+const ring = mesh(tor(.7, .05), G(0xffffff, 3), 0, 0, 0); ring.castShadow = false; ring.visible = false;
+
+/* ===== 9. AUDIO (Web Audio, no files; starts after a user action) ===== */
+let ac = null, master, soundOn = true; const midi = m => 440 * 2 ** ((m - 69) / 12);
+function tone(f, t, dur, type, vol, att, dest) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + att); g.gain.linearRampToValueAtTime(0, t + dur); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + .1); }
+function startAudio() {
+  if (ac) { if (ac.state === 'suspended') ac.resume(); return; } const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  ac = new AC(); master = ac.createGain(); master.gain.value = soundOn ? .5 : 0; master.connect(ac.destination);
+  const len = ac.sampleRate * 3, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0); let last = 0;
+  for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+  const n = ac.createBufferSource(); n.buffer = buf; n.loop = true; const lp = ac.createBiquadFilter(); lp.frequency.value = 380; const ng = ac.createGain(); ng.gain.value = .2;
+  n.connect(lp); lp.connect(ng); ng.connect(master); n.start();                                  // soft factory hum
+  const dl = ac.createDelay(); dl.delayTime.value = .45; const fb = ac.createGain(); fb.gain.value = .35; dl.connect(fb); fb.connect(dl); dl.connect(master);
+  const mel = ac.createGain(); mel.connect(master); mel.connect(dl); const pad = ac.createBiquadFilter(); pad.frequency.value = 1100; pad.connect(master);
+  const CH = [[48, 52, 55, 59], [45, 48, 52, 55], [41, 45, 48, 52], [43, 47, 50, 52]], PENT = [72, 74, 76, 79, 81, 67]; let next = ac.currentTime + .2, bar = 0;
+  const sched = () => { while (next < ac.currentTime + 2) { for (const m of CH[bar % 4]) { tone(midi(m), next, 9, 'triangle', .05, 2.5, pad); tone(midi(m) * 1.004, next, 9, 'sine', .04, 2.5, pad); }
+    for (let k = 0; k < 8; k++) if (Math.random() < .6) tone(midi(PENT[Math.random() * 6 | 0]), next + k, 1.8, 'triangle', .06, .02, mel); next += 8; bar++; } };
+  sched(); setInterval(sched, 500);
+}
+function toggleAudio() { soundOn = !soundOn; startAudio(); $('snd').textContent = 'SOUND ' + (soundOn ? 'ON' : 'OFF'); if (master) master.gain.setTargetAtTime(soundOn ? .5 : 0, ac.currentTime, .1); }
+$('snd').onclick = e => { e.stopPropagation(); toggleAudio(); };
+function noise(dur, freq, vol) { if (!ac) return; const n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * dur | 0, ac.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); n.buffer = b; const f = ac.createBiquadFilter(); f.frequency.value = freq; const g = ac.createGain(); g.gain.value = vol; n.connect(f); f.connect(g); g.connect(master); n.start(); }
+function blip(f0, f1, dur, vol, type) { if (!ac) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05); }
+const sfx = { step: () => noise(.06, 600, .12), land: () => noise(.15, 300, .25), jump: () => blip(300, 600, .15, .12, 'sine'),
+  coin: () => { blip(988, 988, .12, .12, 'triangle'); setTimeout(() => blip(1318, 1318, .25, .12, 'triangle'), 90); },
+  machine: () => { blip(80, 200, 1.4, .15, 'sawtooth'); noise(1, 1500, .1); }, reward: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, f, .5, .12, 'triangle'), i * 140)) };
+
+/* ===== 10. MAIN LOOP ===== */
+$('map').insertBefore(mapCv, $('map').firstChild); $('mc').onclick = toggleMap; $('map').onclick = e => { if (e.target === $('map')) toggleMap(); }; $('home').onclick = goHome; $('tkt').onclick = toggleTicket;
+const toggleSettings = () => { const o = $('settings').style.display !== 'flex'; $('settings').style.display = o ? 'flex' : 'none'; uiOpen = o; if (o) { if (document.pointerLockElement) document.exitPointerLock(); } else if (started) lockPtr(); };
+$('set').onclick = toggleSettings; $('sclose').onclick = toggleSettings;
+$('dn').onclick = () => { mode = mode === 'day' ? 'night' : 'day'; applyEnv(room.id); $('dn').textContent = 'SWITCH TO ' + (mode === 'day' ? 'NIGHT' : 'DAY'); };
+$('vrj').onclick = () => { vrJump = !vrJump; $('vrj').textContent = 'VR JUMPING: ' + (vrJump ? 'ON' : 'OFF'); };
+$('ctl').onclick = () => $('ctlp').style.display = 'block';
+/* ===== 11. CHARLIE'S STORY: first-person narration, voice, subtitles, highlights, reactions ===== */
+const anc = (id, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); rooms[id].g.add(o); return o; };
+addItem(anc('B', -12, 1, -6), 'Chocolate River', '“Can you believe this is actually chocolate?”', { range: 7 });
+addItem(anc('B', -10, 1, 9), 'Candy Garden', '“Even the plants here seem to belong in a dream!”', { range: 8 });
+const REACT = { "Wonka's pink boat": 'I wonder where that wonderful boat will take us.', 'Edible flower': 'Even the flowers are meant to be eaten. I wonder what this one tastes like!', 'Hidden candy detail': 'A secret gumdrop! Did you spot it too?',
+  'Giant candy jar': 'I wonder which sweet Mr Wonka is inventing next.', 'Experimental mixer': 'I have no idea how it works, but I can’t wait to find out!', 'Candy kettle': 'All those pipes and pistons. Everything keeps moving!', 'Sweet-making engine': 'Steam and gears, and out come sweets. What an invention!',
+  'Tempering tank': 'Look how it shines!', 'Cocoa reactor': 'The rings spin round the cocoa. I could watch it all day!', 'Candy shelf': 'So many jars. Every sweet has its own label.', 'Everlasting Gobstopper': 'A sweet that never gets smaller. Imagine that!', 'Three-Course Dinner Chewing Gum': 'A whole dinner in a piece of gum? Let’s see what happens!',
+  'Nut-sorting station': 'Look how carefully they check each nut!', 'Nut-handling machine': 'Mr Wonka really has thought of everything, hasn’t he?', 'Wonka-Vision television': 'Chocolate through a television! I hope everything goes according to plan.', 'Television-Chocolate camera': 'I don’t quite understand how it works, but it’s fascinating.',
+  'Chocolate bar': 'Watch closely. It disappears, and then it comes back!', 'Control desk': 'So many dials and switches. I wonder which one does what.', 'Great Glass Elevator': 'Look at all that glass! I can see the whole factory from here.', 'Elevator button: Wonka bar vending machine': 'A button for the vending machine! Let’s see what Mr Wonka has for us.',
+  'Wonka bar vending machine': 'A whole machine full of Wonka bars! I’ll use my chocolate bites.' };
+const CH = {
+ 1: { t: 'Chapter 1 · The Golden Ticket', next: 2, L: [[`Ever since I was little, I’ve dreamed of visiting Willy Wonka’s chocolate factory. I had heard so many incredible stories about it, but nobody knew what really happened behind those enormous gates.`], [`Then, one day, something unbelievable happened. I found a Golden Ticket!`], [`I couldn’t believe it. Out of millions of chocolate bars, I was one of the lucky five.`], [`And now, I’m standing right here, about to enter the most mysterious factory in the world.`, ['A', 0, 4.5, 14]], [`Come along. I want you to see what I see!`]] },
+ 2: { t: 'Chapter 2 · The Factory Entrance', L: [[`Here we are! This is the entrance to Willy Wonka’s factory.`, ['A', 0, 4.5, 14]], [`I can hardly believe I’m actually here. The gates are opening, and somewhere inside is a world I’ve only ever imagined.`], [`There’s Mr Wonka! He looks just as mysterious as everyone says.`, ['A', 0, 4, -10]], [`I wonder what he’s going to show us first. Are you ready?`]] },
+ 3: { t: 'Chapter 3 · The Chocolate Room', L: [[`Wow! Just look at this place!`], [`I’ve never seen anything like it. There’s a whole river of chocolate flowing right through the middle of a beautiful garden!`, ['B', -12, 1.5, -6]], [`And look at that waterfall! Mr Wonka says the chocolate is real!`], [`The trees, the flowers, the enormous sweets... it feels like I’ve stepped into a dream.`, ['B', -10, 2, 9]], [`I can’t stop looking around. I wonder what everything tastes like!`], [`Come closer. Let’s explore this incredible place together.`, ['B', 9, 3, -5.6]]] },
+ 4: { t: 'Chapter 4 · The Inventing Room', L: [[`We’ve arrived at the Inventing Room!`], [`Mr Wonka says this is where he creates some of his most unusual sweets.`], [`Look at all these strange machines and mysterious ingredients! I have no idea how they work, but I can’t wait to find out.`, ['D', -17.5, 3.5, 0]], [`Everywhere I look, there’s something new. I wonder what incredible invention he’s working on now.`], [`Let’s take a closer look!`]] },
+ 5: { t: 'Chapter 5 · The Nut Room', L: [[`Would you look at that!`], [`I’ve never seen anything like it. These little squirrels are sorting walnuts with such amazing precision.`], [`They’re working so carefully, checking each nut one by one.`], [`Mr Wonka really has thought of everything, hasn’t he?`, ['E', 7, 3.5, -15]], [`Let’s watch them for a moment. I wonder how they learned to do all this!`]] },
+ 6: { t: 'Chapter 6 · The Television Chocolate Room', L: [[`This room is incredible!`], [`Mr Wonka has invented something that sounds impossible. He says he can send chocolate through a television!`, ['F', 8, 2.5, -6]], [`I don’t quite understand how it works, but the machines are fascinating.`, ['F', 14, 3, 4]], [`Imagine being able to send something through a television screen!`], [`Let’s see what happens. I hope everything goes according to plan!`]] },
+ 7: { t: 'Chapter 7 · The Great Glass Elevator', L: [[`Look! It’s the Great Glass Elevator!`], [`I’ve never been inside an elevator like this. We can see everything around us through its transparent walls.`, ['G', 0, 7.5, 0]], [`And it doesn’t just travel up and down. Mr Wonka says it can go in almost any direction!`], [`What an incredible way to travel through the factory.`], [`Come on! Let’s see where it takes us next. Step inside and press the glowing button.`, ['G', -1.5, 3.2, 0]]] },
+ 8: { t: 'Chapter 8 · My Greatest Surprise', L: [[`What a journey this has been!`], [`I came here thinking I was simply going to visit a chocolate factory. But I’ve discovered a world beyond anything I could have imagined.`], [`I’ve seen incredible inventions, extraordinary sweets, and places I will never forget.`], [`Mr Wonka has something important to tell me. I don’t know exactly what is going to happen, but I have a feeling my life is about to change forever.`, ['H', 0, 10.5, -12.3]], [`Thank you for coming along with me.`], [`And remember... never stop dreaming!`]] } };
+const MALE = /daniel|google uk english male|ryan|george|guy|mark|david|alex|fred|arthur|oliver|male/i, FEM = /female|zira|samantha|susan|hazel|karen|moira|fiona|victoria|serena|libby|sonia|aria|jenny/i;
+const KID = /child|kid|junior|boy|samantha|karen|google uk english female|zira|aria|jenny|hazel|susan|serena|moira|tessa/i;   // light voices; combined with a high pitch they sound like a child
+const pickVoice = V => { const en = V.filter(v => /^en/i.test(v.lang)); return en.find(v => /child|kid|junior/i.test(v.name)) || en.find(v => KID.test(v.name) && /en-GB/i.test(v.lang)) || en.find(v => KID.test(v.name)) || en.find(v => FEM.test(v.name)) || en[0] || null; };
+const SS = 'speechSynthesis' in window ? speechSynthesis : null, hlr = mesh(tor(1.1, .07), G(0xffd24a, 3), 0, 0, 0); hlr.castShadow = false; hlr.visible = false;
+const story = { open: true, voice: true, ch: null, id: 0, i: 0, left: 0, paused: false, played: new Set(), fin: false, lifting: false, begun: false, tok: 0, foc: null,
+  start() { if (this.begun) return; this.begun = true; $('story').classList.add('on'); this.play(1); },
+  stop() { this.tok++; this.ch = null; this.foc = null; this.paused = false; $('sub').style.opacity = 0; if (SS) SS.cancel(); },
+  show(o) { this.open = o; $('story').classList.toggle('on', o); if (o) this.replay(); else this.stop(); },
+  play(id) { const c = CH[id]; if (!c) return; this.stop(); this.id = id; this.ch = c; this.i = 0; this.played.add(id); this.open = true; $('story').classList.add('on'); $('sh').textContent = c.t; this.line(); },
+  line() { const [txt, foc] = this.ch.L[this.i], tk = ++this.tok, p = $('sp'), n = txt.split(' ').length; p.textContent = txt; p.classList.remove('f'); void p.offsetWidth; p.classList.add('f'); this.foc = foc || null; $('pp').textContent = '⏸'; this.paused = false;
+    this.left = this.voice && SS ? 6 + n * .7 : 1.8 + n * .33; if (this.voice && SS) this.say(txt, tk, () => { this.left = .8; }); },
+  say(txt, tk, done) { const S = txt.match(/[^.!?]+[.!?]*\s*/g) || [txt]; let k = 0;
+    const nx = () => { if (tk !== this.tok && tk !== -1) return; if (k >= S.length) { $('sub').style.opacity = 0; return done(); } const s = S[k++].trim();       const u = new SpeechSynthesisUtterance(s), V = SS.getVoices(); u.lang = 'en-GB'; u.rate = 1; u.pitch = 1.8; u.volume = 1; u.voice = pickVoice(V); u.onend = u.onerror = nx; SS.speak(u); }; nx(); },
+  next() { if (++this.i < this.ch.L.length) return this.line(); const n = this.ch.next; if (n) this.play(n); else { this.ch = null; this.foc = null; } },
+  skip() { if (!this.ch) return; const n = this.ch.next; if (n) this.play(n); else { this.stop(); } },
+  replay() { this.play(this.ch ? this.id : this.fin ? 8 : ({ 0: 1, 1: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8 })[stage] || this.id || 1); },
+  toggle() { if (!this.ch) return; this.paused = !this.paused; $('pp').textContent = this.paused ? '▶' : '⏸'; if (SS) this.paused ? SS.pause() : SS.resume(); },
+  setVoice(v) { if (!SS) { toast('Voice is not supported in this browser'); return; } this.voice = v; $('vb').classList.toggle('on', v); $('vb').textContent = v ? '🔊 Narration ON' : '🔇 Narration OFF'; toast(v ? 'Narration on: Charlie will read aloud' : 'Narration off');
+    if (!v) { SS.cancel(); $('sub').style.opacity = 0; this.left = Math.min(this.left, 1.5); } else if (this.ch) this.line(); },
+  react(it) { const r = REACT[it.title]; if (!r) return; const e = $('react'); e.textContent = '💬 Charlie: ' + r; e.style.opacity = 1; clearTimeout(this.rh); this.rh = setTimeout(() => e.style.opacity = 0, 4800); if (this.voice && SS && !this.ch) this.say(r, -1, () => {}); },
+  enterStage(st) { if (!started || this.lifting || this.fin || !this.open) return; const id = ({ 0: 2, 1: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8 })[st]; if (id && !this.played.has(id)) this.play(id); },
+  door(to) { enter(to); },
+  hl(t) { const f = this.foc; if (!f || f[0] !== room.id) { hlr.visible = false; return; } hlr.visible = true; hlr.position.set(room.ox + f[1], f[2] + Math.sin(t * 3) * .15, f[3]); hlr.rotation.x = Math.PI / 2; hlr.rotation.z += .04; } };
+setInterval(() => { if (!story.ch || story.paused) return; if ((story.left -= .1) <= 0) story.next(); }, 100);
+$('rp').onclick = () => story.replay(); $('pp').onclick = () => story.toggle(); $('sk').onclick = () => story.skip(); $('vb').onclick = () => story.setVoice(!story.voice); $('cl').onclick = () => story.show(false); $('stb').onclick = () => story.show(!story.open);
+
+/* ===== 12. WEBSITE: home page with room cards -> open a room -> back ===== */
+let siteOn = true, dayMode = 'day'; const tj = { x: 0, y: 0 }, ROOMS = { gate: [0], choc: [1], boat: [1, 1], inv: [4], nut: [5], tv: [6], lift: [7], shop: [8] }; let siteY = 0;
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('v'); }), { root: $('site'), threshold: .15 }); document.querySelectorAll('.card').forEach(c => io.observe(c));
+$('sn').onclick = () => { dayMode = dayMode === 'day' ? 'night' : 'day'; mode = dayMode; applyEnv('A'); $('site').classList.toggle('night', dayMode === 'night'); $('sn').textContent = dayMode === 'day' ? '🌙 NIGHT' : '☀️ DAY'; };
+document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => openRoom(b.dataset.r));
+function openRoom(k) { const [st, boat] = ROOMS[k]; pitch = 0; camera.rotation.y = 0; camera.position.x = 0; siteY = $('site').scrollTop; siteOn = false; document.body.classList.add('in'); mode = dayMode; started = true; paused = false; $('pause').style.display = 'none';
+  Object.assign(story, { fin: false, lifting: false, open: true, begun: true }); story.played.clear(); story.stop(); $('story').classList.add('on'); $('dn').textContent = 'SWITCH TO ' + (mode === 'day' ? 'NIGHT' : 'DAY');
+  fade = null; fadeM.opacity = 0; ride = null; enter(st); if (st === 0) story.play(1); if (boat) beginBoat(); startAudio(); lockPtr(); }
+function closeRoom() { if (siteOn) return; started = false; siteOn = true; story.stop(); story.lifting = false; $('story').classList.remove('on'); ride = null; fade = null; fadeM.opacity = 0; held = null; tk.open = false; tkG.visible = false; boatRide = false;
+  for (const id of ['map', 'settings', 'pause']) { $(id).style.display = ''; } endShow(false); uiOpen = false; paused = false; $('react').style.opacity = 0; $('hud').style.opacity = 0; mapP.visible = false;
+  if (document.pointerLockElement) document.exitPointerLock(); const s = renderer.xr.getSession && renderer.xr.getSession(); if (s) s.end(); document.body.classList.remove('in'); $('site').scrollTop = siteY; mode = dayMode; enter(0); pitch = .14; }
+$('back').onclick = closeRoom; $('pb').onclick = closeRoom;
+{ const joy = $('joy'), kn = $('knob'), lk = $('look'); let jid = null, c0 = [0, 0], lt = null, tap = 0;
+  const mv = t => { let dx = (t.clientX - c0[0]) / 45, dy = (t.clientY - c0[1]) / 45; const d = Math.hypot(dx, dy); if (d > 1) { dx /= d; dy /= d; } tj.x = dx; tj.y = dy; kn.style.transform = `translate(${dx * 35}px,${dy * 35}px)`; };
+  joy.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0], r = joy.getBoundingClientRect(); jid = t.identifier; c0 = [r.left + r.width / 2, r.top + r.height / 2]; mv(t); }, { passive: false });
+  joy.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) if (t.identifier === jid) mv(t); }, { passive: false });
+  const je = e => { for (const t of e.changedTouches) if (t.identifier === jid) { jid = null; tj.x = tj.y = 0; kn.style.transform = ''; } }; joy.addEventListener('touchend', je); joy.addEventListener('touchcancel', je);
+  lk.addEventListener('touchstart', e => { const t = e.changedTouches[0]; lt = { id: t.identifier, x: t.clientX, y: t.clientY, m: 0 }; }, { passive: true });
+  lk.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) if (lt && t.identifier === lt.id) { const dx = t.clientX - lt.x, dy = t.clientY - lt.y; lt.m += Math.abs(dx) + Math.abs(dy); lt.x = t.clientX; lt.y = t.clientY; if (!paused && !uiOpen) { rig.rotation.y -= dx * .006; pitch = clamp(pitch - dy * .005, -1.4, 1.4); } } }, { passive: false });
+  lk.addEventListener('touchend', () => { if (lt && lt.m < 12) interact(); lt = null; }); $('jmp').addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false }); }
+
+/* ===== 13. REAL 3D HERO + ROOM SNAPSHOTS FOR THE CARDS ===== */
+function captureThumbs() {
+  const cv = renderer.domElement, W = 480, H = 300, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const views = { gate: [0], choc: [1], boat: [1, 103, 6, -.48], inv: [4], nut: [5], tv: [6], lift: [7], shop: [8] }; avatar.visible = false;
+  try { for (const k in views) { const [st, px, pz, ry] = views[k]; enter(st); if (px !== undefined) { rig.position.set(px, 0, pz); rig.rotation.y = ry; }
+      camera.position.set(0, EYE, 0); camera.rotation.set(0, 0, 0); renderer.render(scene, camera);
+      const sw = Math.min(cv.width, cv.height * W / H), sh = sw * H / W; x.drawImage(cv, (cv.width - sw) / 2, (cv.height - sh) / 2, sw, sh, 0, 0, W, H);
+      const a = document.querySelector(`.card[data-r="${k}"] .art`); if (a) { a.style.backgroundImage = `url(${c.toDataURL('image/jpeg', .82)})`; a.style.backgroundSize = 'cover'; a.style.backgroundPosition = 'center'; a.textContent = ''; } } } catch (e) {}
+  enter(0); pitch = .14; }
+
+
+/* ===== 14. CHOCOLATE BITES (like coins in Subway Surfers), VENDING MACHINE PURCHASE AND THE ENDING ===== */
+const BITES = {};
+const inSolid = (R, x, y, z) => { const wx = R.ox + x; for (const o of R.solids) { if (y - .2 > o.h) continue; const dx = wx - o.x, dz = z - o.z, lx = dx * o.c - dz * o.s, lz = dx * o.s + dz * o.c; if (Math.abs(lx) < o.hw + .45 && Math.abs(lz) < o.hd + .45) return true; } return false; };
+function addBites(id, pts, ride) {                                 // ride = true: the bites hang over the river / tunnel for the boat to sail through, so they ignore walking collisions
+  const R = rooms[id]; let n = 0; for (const [x, y, z] of pts) { if (!ride && inSolid(R, x, y, z)) continue; const g = createBite(); g.position.set(x, y, z); R.g.add(g); (BITES[id] = BITES[id] || []).push({ g, x: R.ox + x, y, z, got: false, p: n++ * .7 }); } return n; }
+const bLine = (x1, z1, x2, z2, n, y = 1) => Array.from({ length: n }, (_, i) => { const k = n > 1 ? i / (n - 1) : 0; return [x1 + (x2 - x1) * k, y, z1 + (z2 - z1) * k]; });
+const bArc = (x1, z1, x2, z2, n, peak = 2) => bLine(x1, z1, x2, z2, n).map(([x, , z], i) => [x, 1 + (peak - 1) * Math.sin(Math.PI * (n > 1 ? i / (n - 1) : 0)), z]);   // jump arcs: you have to jump to grab the top ones
+const bWeave = (z1, z2, step, amp) => { const o = []; for (let z = z1; z > z2; z -= step) o.push([amp * Math.sin(z * .35), 1, z]); return o; };
+addBites('A', [...bLine(0, 22, 0, 11, 7), ...bArc(0, 9, 0, 1, 7, 2), ...bLine(0, -2, 0, -7, 3)]);
+addBites('B', [...bLine(0, 14, 0, 1, 8), ...bArc(0, -1.5, 0, -10, 8, 2), ...bLine(1.5, -1.6, 8, -1.6, 5), ...bLine(8.6, -2.8, 9.2, -3.9, 2), ...bLine(-10, 13, -10, 5, 5), ...bLine(11, 4, 15, 8, 3)]);
+addBites('B', bLine(11, -5.6, 20, -5.6, 7), true);                  // along the river: you pick these up while sailing
+addBites('C', Array.from({ length: 14 }, (_, i) => [Math.sin(i * 1.3) * .8, 1, 30 - i * 4.6]), true);   // along the dark tunnel
+addBites('D', [...bWeave(14, -16, 2.4, 1.8), ...bArc(1.8, 3, -1.8, -2, 5, 2)]);
+addBites('E', [...bWeave(14, -16, 2.4, 1.8), ...bArc(-1.8, 3, 1.8, -2, 5, 2)]);
+addBites('F', [...bLine(0, 12, -9, 0, 7), ...bArc(-9, 0, -12, -8, 5, 2), ...bLine(-12, -9, -14, -15, 4)]);
+addBites('G', [...bLine(0, 19, 0, 7, 7), ...bArc(-7, 12, 7, 12, 6, 2), ...bLine(-8, 4, -8, -2, 3), ...bLine(8, 4, 8, -2, 3), ...bLine(-.5, .6, .5, .6, 2)]);
+addBites('H', [...bLine(0, 12, 0, -7, 10), ...bArc(0, 3, 0, -4, 6, 2), ...bLine(-1.6, 9, -1.6, 3, 4), ...bLine(1.6, 9, 1.6, 3, 4)]);
+const updBites = () => { $('cn').textContent = nBites; const c = $('coins'); c.classList.add('b'); setTimeout(() => c.classList.remove('b'), 160); drawVM(); };
+let biteCombo = 0, biteLast = -9;
+function biteTick(t) {
+  const L = BITES[room.id]; if (!L || !started || siteOn) return;
+  for (const b of L) { if (b.got) continue; b.g.rotation.y = t * 2.2 + b.p; b.g.position.y = b.y + Math.sin(t * 3 + b.p) * .07;
+    const dx = b.x - rig.position.x, dz = b.z - rig.position.z; if (dx * dx + dz * dz > 1.25 || Math.abs(b.y - (rig.position.y + 1)) > .75) continue;
+    b.got = true; b.g.visible = false; nBites++; biteCombo = t - biteLast < 1.2 ? biteCombo + 1 : 0; biteLast = t; blip(900 + Math.min(biteCombo, 8) * 70, 1400 + Math.min(biteCombo, 8) * 70, .09, .09, 'triangle'); updBites();
+    const p = $('plus'); p.classList.remove('go'); void p.offsetWidth; p.classList.add('go'); }
+}
+function endShow(on) { $('end').classList.toggle('on', on); uiOpen = on; if (on && document.pointerLockElement) document.exitPointerLock(); }
+function resetRun() { nBites = 0; for (const k in BITES) for (const b of BITES[k]) { b.got = false; b.g.visible = true; } vm.t = -1; vm.bought = false; vm.out = false; vm.flap.rotation.x = 0; vmG.add(vm.bar); vm.bar.position.copy(vm.p0); vm.bar.scale.setScalar(1); vm.bar.rotation.set(0, 0, 0);
+  vmMsg = 'Insert your|chocolate bites!'; $('cn').textContent = 0; drawVM(); story.played.clear(); }
+$('again').onclick = () => { endShow(false); resetRun(); closeRoom(); openRoom('gate'); }; $('eback').onclick = () => { endShow(false); closeRoom(); };
+function buyBar() {
+  if (vm.bought) { toast('You already have your Wonka bar. Enjoy it!'); return; } if (vm.t >= 0) return;
+  if (nBites < PRICE) { vmMsg = `Need ${PRICE - nBites} more|bites!`; drawVM(); toast(`You need ${PRICE - nBites} more chocolate bites. Collect them in the factory rooms!`); blip(220, 140, .3, .12, 'sawtooth'); return; }
+  nBites -= PRICE; vmMsg = 'Thank you!|Enjoy your bar'; $('cn').textContent = nBites; drawVM(); vm.t = 0; sfx.machine(); story.stop(); }
+const vmItem = addItem(anc2('H', 0, 3, -9.2), 'Wonka bar vending machine', '', { range: 6.5, use: buyBar }), vmV = new THREE.Vector3(), vmD = new THREE.Vector3();
+function vmTick(dt) {
+  vmItem.text = vm.bought ? 'You have your Wonka bar. Enjoy it!' : nBites >= PRICE ? `Press E: buy a Wonka bar for ${PRICE} chocolate bites. You have ${nBites}.` : `A Wonka bar costs ${PRICE} chocolate bites. You have ${nBites}. Collect more bites in the factory rooms!`;
+  if (vm.t < 0 || vm.bought) return; vm.t += dt; const T = vm.t, b = vm.bar;
+  if (T < 1) b.rotation.y = Math.sin(T * 40) * .06;
+  else if (T < 2) { const k = T - 1; b.rotation.y = 0; b.position.y = vm.p0.y + (1.4 - vm.p0.y) * k * k; }
+  else if (T < 2.8) vm.flap.rotation.x = -(T - 2) / .8 * 1.3;
+  else { if (!vm.out) { vm.out = true; rooms.H.g.attach(b); sfx.reward(); }
+    camera.getWorldPosition(vmV); camera.getWorldDirection(vmD); vmV.addScaledVector(vmD, 1.9); vmV.y -= .4; vmV.x -= rooms.H.ox; b.position.lerp(vmV, Math.min(1, dt * 3.5)); b.scale.setScalar(Math.min(1.1, b.scale.x + dt * .3)); b.rotation.y += dt * 3;
+    if (T > 6.2) { vm.bought = true; endShow(true); } }
+}
+
+enter(0); pitch = .14; setTimeout(captureThumbs, 600); const clock = new THREE.Clock(), faceV = new THREE.Vector3(), dirV = new THREE.Vector3();
+renderer.setAnimationLoop(() => {
+  if (siteOn && !renderer.xr.isPresenting && $('site').scrollTop > innerHeight) return;   // hero = live 3D entrance; stop drawing once scrolled past it
+  const raw = Math.min(clock.getDelta(), .05), dt = paused ? 0 : raw, t = clock.elapsedTime, xr = renderer.xr.isPresenting;
+  if (fade) { fadeM.opacity = clamp(fadeM.opacity + fade.dir * dt * 2.5, 0, 1); if (fade.dir > 0 && fadeM.opacity >= 1) { const c = fade.cb; fade.dir = -1; c(); } else if (fade.dir < 0 && fadeM.opacity <= 0) fade = null; }
+  if (ride) { ride.t += dt; const k = Math.min(1, ride.t / ride.dur); ride.upd(k); if (k >= 1) { const d = ride.done; ride = null; d && d(); } }
+  const frozen = siteOn || ride || fade || uiOpen || $('map').style.display === 'flex';
+  if (xr) xrInput(); else { camera.rotation.x = pitch; const yw = rig.rotation.y;
+    inp.f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - tj.y; inp.s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + tj.x;
+    inp.fx = -Math.sin(yw); inp.fz = -Math.cos(yw); inp.run = !!(keys.ShiftLeft || keys.ShiftRight) || Math.hypot(tj.x, tj.y) > .95; }
+  if (frozen) inp.f = inp.s = 0;
+  if (!ride && !fade) physics(dt, xr);   // no falling while a lift/fade transition is playing
+  sun.position.set(rig.position.x + 20, 40, rig.position.z + 15); sun.target.position.set(rig.position.x, 0, rig.position.z);
+  if (!ride && !fade) for (const d of room.doors) if (Math.hypot(d.x - rig.position.x, d.z - rig.position.z) < d.r) fadeTo(() => story.door(d.to));
+  // nearest inspectable item in the current room
+  best = null; let bd = 1e9; for (const it of items) { it.near = false; if (it.obj.parent && !isIn(it.obj)) continue;
+    const d = Math.hypot(it.anchor.x - rig.position.x, it.anchor.z - rig.position.z); it.near = d < it.range; if (it.near && d < bd) { bd = d; best = it; } }
+  camera.getWorldPosition(faceV); camera.getWorldDirection(dirV); faceV.addScaledVector(dirV, .7);
+  for (const it of items) { if (it.lift) { const h = held === it, tg = h ? it.obj.parent.worldToLocal(faceV.clone()) : it.home.clone(); if (it.near && !h) tg.y += .9;
+      it.obj.position.lerp(tg, Math.min(1, dt * 4)); it.obj.scale.setScalar(THREE.MathUtils.lerp(it.obj.scale.x, h ? it.s0 * .35 : it.s0, Math.min(1, dt * 4))); if (it.near || h) it.obj.rotation.y += dt * (h ? 1.5 : .7); } }
+  if (held && Math.hypot(held.anchor.x - rig.position.x, held.anchor.z - rig.position.z) > held.range + 1.5) held = null;   // walk away = it goes back
+  showInfo(held || best); panel.visible = xr && !!shown; ring.visible = !!best && !ride; if (best) { ring.position.copy(best.anchor).y += 3.2; ring.rotation.y += dt * 2; ring.rotation.x = Math.PI / 2; }
+  // animations
+  for (const s of spinners) { const g = s.g, lk = g.userData.lock = Math.max(0, (g.userData.lock || 0) - dt); g.userData.boost = THREE.MathUtils.lerp(g.userData.boost || 0, lk > 0 ? 1 : 0, dt * 3); s.m.rotation.z += dt * 1.2 * (1 + 4 * g.userData.boost); }
+  for (const p of pistons) p.m.position.y = p.base + Math.sin(t * 3 * (1 + 4 * (p.g.userData.boost || 0))) * .15;
+  for (const b of bubbles) b.m.position.y = 2.3 + ((t * .5 + b.p) % 1) * .7;
+  for (const q of squirrels) q.h.rotation.x = Math.sin(t * 2 + q.p) * .4;
+  for (const a of arrows) a.position.y = 4.5 + Math.sin(t * 3) * .4;
+  for (const o of [rooms.B.g, rooms.C.g]) o.traverse(m => { if (m.userData.flow) { m.position.x += dt * 1.2; if (m.position.x > 22) m.position.x = -22; } });
+  boatB.position.y = Math.sin(t * 1.5) * .03; if (!boatRide) boatB.position.x = 9;
+  for (const st of stations) { const u = st.userData.sort; if (u) { u.t += dt; const k = Math.min(1, u.t / 1.2), n = st.userData.nut;
+    n.position.set(u.good ? 1.9 * k : -1.9 * k, 1 + Math.sin(k * 3.14) * .5 - k * (u.good ? .5 : .9), 0); if (u.t > 1.4) { n.position.set(0, 1, 0); st.userData.sort = null; } } }
+  if (tvT >= 0) { tvT += dt; const T = tvT, SM = m => { if (tvMode !== m) { tvMode = m; drawTV(m); } };   // chocolate transmission: bar -> camera -> flying pieces -> TV -> bar pops out
+    if (T < 1.2) { const k = T / 1.2; bar.position.set(8 - 3.6 * k, 1.1 + .5 * k, -6); bar.scale.setScalar(1 - .95 * k); }
+    else if (T < 2.8) { const k = (T - 1.2) / 1.6; bar.visible = false; SM('static'); orbs.forEach((o, j) => { const p = clamp(k - j * .07, 0, 1); o.visible = p > 0 && p < 1; o.position.set(4.6 - 8.6 * p, 1.6 + 2 * p + Math.sin(p * Math.PI) * 2, -6 - 5.8 * p); }); }
+    else if (T < 3.8) { const k = T - 2.8; orbs.forEach(o => o.visible = false); SM('bar'); outBar.visible = true; outBar.position.set(-4, 3.6 - 2.35 * k, -12 + 2.3 * k); outBar.scale.setScalar(clamp(.1 + 1.3 * k, .1, 1.4)); outBar.rotation.y = 0; }
+    else if (T < 8) { outBar.position.set(-4, 1.25 + Math.sin(T * 2) * .05, -9.7); outBar.rotation.y += dt * 1.2; }
+    else if (T < 8.8) { const k = (T - 8) / .8; outBar.scale.setScalar(1.4 * (1 - k)); SM('idle'); bar.visible = true; bar.position.set(8, 1.1, -6); bar.scale.setScalar(Math.max(.01, k)); }
+    else { outBar.visible = false; bar.position.set(8, 1.1, -6); bar.scale.setScalar(1); bar.visible = true; SM('idle'); tvT = -1; }
+    if (tvMode === 'static') { tvS += dt; if (tvS > .07) { tvS = 0; drawTV('static'); } } }
+  // character animation (arms and legs are pivot groups, we just rotate them)
+  const spd = Math.hypot(vel.x, vel.z), P = avatar.userData.P; phase += dt * spd * 2;
+  const sw = Math.sin(phase) * Math.min(1, spd / 3) * (spd > 4.5 ? 1 : .65);
+  if (Math.sign(Math.sin(phase)) !== stepSide && spd > .8 && onGround) { stepSide = Math.sign(Math.sin(phase)); sfx.step(); }
+  P.legL.rotation.x = onGround ? sw : -.6; P.legR.rotation.x = onGround ? -sw : .3; P.armL.rotation.x = onGround ? -sw * .9 : -.8; P.armR.rotation.x = onGround ? sw * .9 : -.8;
+  reachT = Math.max(0, reachT - dt); if (reachT > 0) P.armR.rotation.x = -1.5 * Math.min(1, reachT * 5);   // reaching / collecting
+  landT = Math.max(0, landT - dt); avatar.scale.y = 1 - landT * .25; P.torso.scale.y = 1 + Math.sin(t * 2) * .012; P.torso.rotation.x = spd > 4.5 ? .15 : 0;
+  avatar.visible = !xr && !siteOn; avatar.position.z = third ? 0 : .15;
+  if (!xr) { const fr = Math.min(1, spd / 3), ty = third ? 2.4 : EYE + Math.sin(phase * 2) * .03 * fr - landT * .3;
+    camera.position.lerp(tmp.set(0, ty, third ? 4.2 + Math.min(1, spd / 6) * .8 : 0), Math.min(1, dt * (third ? 5 : 20))); }   // smooth follow + bob (desktop only)
+  for (const f of floaters) f.m.position.y = f.y + Math.sin(t * .8 + f.p) * .5;
+  for (const c of conveyors) c.m.position.x = (((t * .4 + c.o) % 1) - .5) * c.len * .9;
+  for (const q of puffs) { const k = (t * .12 + q.o) % 1; q.m.position.set(q.x, q.y + k * 6, q.z); q.m.scale.setScalar(.8 + k * 2.2); q.m.material.opacity = .28 * (1 - k); }   // rising steam
+  for (const r of rings) r.material.emissiveIntensity = .5 + .6 * Math.abs(Math.sin(t * 1.3 + r.userData.p)) * (Math.sin(t * 7 + r.userData.p * 3) > .6 ? 2 : 1);   // dim flickering tunnel lights
+  for (const m of [skyAd, skyAn, skyBd, skyBn, skyGd, skyGn]) m.position.set(rig.position.x, 0, rig.position.z); spark.material.size = .45 + .15 * Math.sin(t * 3);
+  for (const f of falls) f.m.position.y = 12 - ((t * 2.5 + f.o) % 1) * 12;                                  // waterfall streaks pour down
+  for (const d of drifters) { d.g.position.set(((d.x0 + t * d.sp + 22) % 44) - 22, .06 + Math.sin(t * 1.4 + d.x0) * .03, d.z); d.g.rotation.y = t * .2 + d.x0; }   // egg shells drift along the river
+  for (const f of fizz) f.m.position.y = f.y + ((t * .6 + f.p) % 1) * f.h;   // bubbles rise inside the flasks
+  if (tk.open) { tk.t += raw; const k = clamp((tk.t - 1) / .9, 0, 1); tkG.rotation.y = k * k * (3 - 2 * k) * Math.PI; tkG.scale.setScalar(Math.min(1, .2 + tk.t * 2.5)); }   // front first, then a smooth 3D flip
+  if (!xr) mapP.visible = false; story.hl(t); biteTick(t); vmTick(dt); if (siteOn && !xr) { camera.position.x = Math.sin(t * .25) * 1.6; camera.rotation.y = -camera.position.x * .02; }   // slow drift in the home-page hero
+  renderer.render(scene, camera);
+});
+function isIn(o) { while (o) { if (o === room.g) return true; o = o.parent; } return false; }   // is this object inside the current room?
+</script></body></html>
